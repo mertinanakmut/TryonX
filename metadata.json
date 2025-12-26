@@ -2,6 +2,7 @@
   "name": "TryonX - AI Virtual Try-On",
   "description": "High-fidelity virtual try-on studio powered by Kling AI and TryonX neural engine.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

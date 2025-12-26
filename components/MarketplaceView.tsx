@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Language, translations } from '../translations';
-import { BrandProduct } from '../types';
+import { BrandProduct, Comment } from '../types';
 
 interface MarketplaceViewProps {
   lang: Language;
@@ -17,10 +17,11 @@ interface MarketplaceViewProps {
 const MarketplaceView: React.FC<MarketplaceViewProps> = ({ 
   lang, products, onTryOn, onLike, onComment, onView, onBuy, onBack 
 }) => {
-  const t = translations[lang].arena; // Reusing translations
-  const [commentingId, setCommentingId] = useState<string | null>(null);
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
 
   const sortedProducts = [...products].sort((a, b) => b.trendScore - a.trendScore);
+  const activeProduct = products.find(p => p.id === activeCommentId);
 
   return (
     <div className="min-h-screen bg-black text-white p-6 sm:p-12 animate-in fade-in duration-700">
@@ -43,8 +44,9 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                   <span className="text-[8px] font-black uppercase tracking-widest text-white/70">{prod.brandName}</span>
                 </div>
                 <div className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-cyan-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest">₺{prod.price.toLocaleString()}</div>
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center backdrop-blur-[2px] gap-4">
                   <button onClick={() => onTryOn(prod)} className="bg-white text-black px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500 transition active:scale-95">TRY ON</button>
+                  <button onClick={() => setActiveCommentId(prod.id)} className="bg-white/10 text-white border border-white/20 px-8 py-3 rounded-full text-[9px] font-black uppercase hover:bg-white/20 transition">REVIEWS ({prod.comments.length})</button>
                 </div>
               </div>
               <div className="p-6 sm:p-8 space-y-6 flex-1 flex flex-col">
@@ -62,6 +64,38 @@ const MarketplaceView: React.FC<MarketplaceViewProps> = ({
           ))}
         </div>
       </div>
+
+      {activeCommentId && activeProduct && (
+        <div className="fixed inset-0 z-[700] bg-black/80 backdrop-blur-sm flex justify-end">
+           <div className="w-full max-w-md bg-[#050505] border-l border-white/10 flex flex-col animate-in slide-in-from-right duration-500">
+              <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                 <div>
+                    <h2 className="text-xl font-black uppercase tracking-widest">PRODUCT REVIEWS</h2>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase">{activeProduct.name}</p>
+                 </div>
+                 <button onClick={() => setActiveCommentId(null)} className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">×</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+                 {activeProduct.comments.length > 0 ? activeProduct.comments.map(c => (
+                    <div key={c.id} className="space-y-2">
+                       <div className="flex items-center gap-3">
+                          <img src={c.userAvatar || 'https://via.placeholder.com/40'} className="h-6 w-6 rounded-full" />
+                          <span className="text-[10px] font-black uppercase text-cyan-400">{c.userName}</span>
+                          <span className="text-[8px] font-bold text-gray-600 ml-auto">{new Date(c.timestamp).toLocaleTimeString()}</span>
+                       </div>
+                       <p className="text-[11px] text-gray-400 leading-relaxed pl-9">{c.text}</p>
+                    </div>
+                 )) : (
+                    <div className="text-center py-20 text-[10px] font-bold text-gray-700 uppercase tracking-widest">Henüz inceleme yok.</div>
+                 )}
+              </div>
+              <div className="p-8 border-t border-white/5 space-y-4">
+                 <textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Ürün hakkında ne düşünüyorsun?" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-xs font-medium outline-none h-24 focus:border-cyan-500 transition-all resize-none"></textarea>
+                 <button onClick={() => { if (newComment.trim()) { onComment(activeCommentId, newComment); setNewComment(""); } }} className="w-full py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest">GÖNDER</button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

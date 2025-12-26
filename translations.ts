@@ -1,7 +1,6 @@
 
 export const translations = {
   tr: {
-    // Add missing landing translations
     landing: {
       title: "TryonX",
       tagline: "YENİ NESİL NÖRAL DENEYİM",
@@ -12,7 +11,9 @@ export const translations = {
       scanning: "BİYOMETRİ TARANIYOR",
       secure: "GÜVENLİ_PROTOKOL",
       ver: "VERSION_2.5",
-      footer: "TryonX Neural Synthesis Studio. Tüm hakları saklıdır."
+      footer: "TryonX Neural Synthesis Studio. Tüm hakları saklıdır.",
+      partnersTitle: "RESMİ BİYOMETRİK PARTNERLER",
+      partnersSubtitle: "NÖRAL AĞA ENTEGRE MARKALAR"
     },
     profile: {
       identity: "NÖRAL KİMLİK",
@@ -242,7 +243,6 @@ export const translations = {
     }
   },
   en: {
-    // Add missing landing translations
     landing: {
       title: "TryonX",
       tagline: "NEXT GEN NEURAL EXPERIENCE",
@@ -253,7 +253,9 @@ export const translations = {
       scanning: "SCANNING BIOMETRICS",
       secure: "SECURE_PROTOCOL",
       ver: "VERSION_2.5",
-      footer: "TryonX Neural Synthesis Studio. All rights reserved."
+      footer: "TryonX Neural Synthesis Studio. All rights reserved.",
+      partnersTitle: "OFFICIAL BIOMETRIC PARTNERS",
+      partnersSubtitle: "BRANDS INTEGRATED TO NEURAL NETWORK"
     },
     profile: {
       identity: "NEURAL IDENTITY",

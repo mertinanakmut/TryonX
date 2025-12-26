@@ -4,6 +4,15 @@ export type Scenario = 'studio' | 'urban' | 'nature' | 'party';
 export type FitPreference = 'slim' | 'regular' | 'relaxed';
 export type ProfileVisibility = 'public' | 'brands' | 'private';
 
+export interface UserPreferences {
+  style_preferences: string[];
+  fit_preference: FitPreference;
+  comfort_mode_enabled: boolean;
+  data_consent: boolean;
+  legal_version: string;
+  onboarding_complete: boolean;
+}
+
 export interface BodyMeasurements {
   height: number;
   weight: number;
@@ -14,31 +23,21 @@ export interface BodyMeasurements {
 }
 
 export interface User {
+  id: string; // Database UUID
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'brand';
   bio?: string;
-  avatar?: string;
+  avatar_url?: string; // Matched with SQL schema
   visibility: ProfileVisibility;
-}
-
-export interface UserPreferences {
-  style_preferences: string[];
-  fit_preference: FitPreference;
-  comfort_mode_enabled: boolean;
-  data_consent: boolean;
-  legal_version: string;
-  onboarding_complete: boolean;
-  initial_recommendations?: {
-    categories: string[];
-    brands: string[];
-    items: string[];
-  };
+  followers: string[];
+  following: string[];
 }
 
 export interface Comment {
   id: string;
   userName: string;
+  userAvatar?: string;
   text: string;
   timestamp: number;
 }
@@ -61,11 +60,23 @@ export interface BrandProduct {
   trendScore: number;
 }
 
+export interface BrandInsight {
+  totalTryOns: number;
+  engagementRate: number;
+  clonesCount: number;
+  bodyTypeData: { type: string; percentage: number }[];
+  topPairings: { item: string; frequency: number }[];
+  productionRisk: {
+    score: number;
+    issue: string;
+    description: string;
+  };
+}
+
 export interface GeminiStyleAdvice {
   summary: string;
   stylingTips: string[];
   vibe: string;
-  sources?: any[];
 }
 
 export interface LookbookEntry {
@@ -105,9 +116,7 @@ export interface RunwayPost {
   category: string;
   vibe: string;
   votes: number;
-  commentsCount: number;
-  isSponsored?: boolean;
-  challengeId?: string; // Links to StyleChallenge.id
+  comments: Comment[];
 }
 
 export interface StyleArchitect {
@@ -119,29 +128,10 @@ export interface StyleArchitect {
   rank: number;
 }
 
-// Fix: Define the missing BrandInsight interface used in InsightsDashboard.tsx
-export interface BrandInsight {
-  totalTryOns: number;
-  engagementRate: number;
-  clonesCount: number;
-  bodyTypeData: {
-    type: string;
-    percentage: number;
-  }[];
-  topPairings: {
-    item: string;
-    frequency: number;
-  }[];
-  productionRisk: {
-    score: number;
-    issue: string;
-    description: string;
-  };
-}
-
 export interface TryOnState {
-  view: 'home' | 'studio' | 'brand' | 'tech' | 'auth' | 'profile-setup' | 'personalization' | 'legal' | 'marketplace' | 'arena';
+  view: 'landing' | 'home' | 'studio' | 'brand' | 'tech' | 'auth' | 'marketplace' | 'arena' | 'search' | 'user_profile';
   currentUser: User | null;
+  targetUser: User | null; // Profile viewing
   personImage: string | null;
   garmentImage: string | null;
   resultImage: string | null;
@@ -152,12 +142,13 @@ export interface TryOnState {
   error: string | null;
   lookbook: LookbookEntry[];
   closet: ClosetItem[];
-  measurements: BodyMeasurements | null;
-  preferences: UserPreferences | null;
-  prevView?: TryOnState['view'];
   brandProducts: BrandProduct[];
   challenges: StyleChallenge[];
   runwayPosts: RunwayPost[];
   architects: StyleArchitect[];
-  activeChallengeId: string | null; // Track if user is currently doing a challenge
+  activeChallengeId: string | null;
+  searchQuery: string;
+  allUsers: User[];
+  measurements: BodyMeasurements | null;
+  preferences: UserPreferences | null;
 }

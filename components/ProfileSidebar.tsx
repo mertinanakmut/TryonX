@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Language, translations } from '../translations';
-import { User, ProfileVisibility, RunwayPost } from '../types';
+import { User, ProfileVisibility } from '../types';
 
 interface ProfileSidebarProps {
   lang: Language;
@@ -9,155 +9,106 @@ interface ProfileSidebarProps {
   onClose: () => void;
   onLogout: () => void;
   onUpdateUser: (updates: Partial<User>) => void;
-  myPosts?: RunwayPost[];
 }
 
-const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ lang, user, onClose, onLogout, onUpdateUser, myPosts = [] }) => {
+const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ lang, user, onClose, onLogout, onUpdateUser }) => {
   const t = translations[lang].profile;
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || '');
   const [visibility, setVisibility] = useState<ProfileVisibility>(user.visibility || 'private');
-  const [avatar, setAvatar] = useState(user.avatar || '');
+  const [avatar_url, setAvatarUrl] = useState(user.avatar_url || '');
+  const [isSaving, setIsSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatar(reader.result as string);
-      };
+      reader.onloadend = () => setAvatarUrl(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    onUpdateUser({ name, bio, visibility, avatar });
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onUpdateUser({ name, bio, visibility, avatar_url });
+    setIsSaving(false);
     onClose();
   };
 
-  const VisibilityOption = ({ type, label }: { type: ProfileVisibility, label: string }) => (
-    <button 
-      onClick={() => setVisibility(type)}
-      className={`w-full p-4 rounded-2xl border text-left transition-all ${visibility === type ? 'bg-white/10 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
-    >
-      <div className="flex justify-between items-center mb-1">
-        <span className={`text-[10px] font-black uppercase tracking-widest ${visibility === type ? 'text-cyan-400' : 'text-white/60'}`}>{label}</span>
-        {visibility === type && <div className="h-2 w-2 bg-cyan-500 rounded-full shadow-[0_0_10px_cyan]"></div>}
-      </div>
-      <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
-        {t.visibilityDesc[type]}
-      </p>
-    </button>
-  );
-
   return (
-    <div className="fixed inset-0 z-[600] flex justify-end">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-500"
-        onClick={onClose}
-      ></div>
-
-      {/* Sidebar Content */}
-      <div className="relative w-full max-w-md h-full bg-[#050505] border-l border-white/10 p-8 sm:p-12 shadow-[-20px_0_100px_rgba(0,0,0,1)] animate-in slide-in-from-right duration-500 overflow-y-auto no-scrollbar">
-        <div className="absolute inset-0 scanner-line opacity-5 pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-2xl font-black tracking-tighter uppercase text-white leading-none">{t.identity}</h2>
-              <p className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.4em] mt-2">USER_NODE_{user.email.split('@')[0].toUpperCase()}</p>
-            </div>
-            <button 
-              onClick={onClose}
-              className="p-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition"
-            >
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+    <div className="fixed inset-0 z-[1000] flex justify-end overflow-hidden">
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-md transition-opacity" onClick={onClose} />
+      <div className="relative w-full max-w-md h-full bg-[#050505] border-l border-white/10 shadow-[-20px_0_100px_rgba(0,0,0,0.8)] flex flex-col animate-in slide-in-from-right duration-500">
+        <div className="absolute inset-0 pointer-events-none opacity-10 studio-grid"></div>
+        <div className="relative p-10 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-xl">
+          <div>
+            <h2 className="text-3xl font-black tracking-tighter uppercase text-white leading-none">{t.identity}</h2>
+            <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.4em] mt-2">BİYOMETRİK AYARLAR</p>
           </div>
+          <button onClick={onClose} className="h-12 w-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 transition text-xl">×</button>
+        </div>
 
-          <div className="space-y-10 flex-1">
-            {/* Avatar Section */}
-            <div className="flex flex-col items-center">
-              <div className="relative group cursor-pointer" onClick={() => fileRef.current?.click()}>
-                <div className="absolute -inset-2 rounded-full tryonx-gradient blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative h-28 w-28 rounded-full border-2 border-white/10 overflow-hidden bg-black flex items-center justify-center">
-                  {avatar ? (
-                    <img src={avatar} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-4xl font-black text-white/20">{user.name.charAt(0)}</span>
-                  )}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                     <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  </div>
+        <div className="flex-1 overflow-y-auto p-10 space-y-16 no-scrollbar relative z-10 pb-32">
+          <div className="flex flex-col items-center">
+            <div className="relative group cursor-pointer" onClick={() => fileRef.current?.click()}>
+              <div className="absolute -inset-6 tryonx-gradient rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition duration-700"></div>
+              <div className="relative h-40 w-40 rounded-[3.5rem] border-2 border-white/10 overflow-hidden bg-black flex items-center justify-center shadow-2xl">
+                {avatar_url ? <img src={avatar_url} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" /> : <span className="text-5xl font-black">{user.name.charAt(0)}</span>}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                   <span className="text-[10px] font-black uppercase tracking-widest">GÜNCELLE</span>
                 </div>
-                <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
               </div>
-              <div className="mt-6 text-center">
-                <input 
-                  value={name} 
-                  onChange={e => setName(e.target.value)}
-                  className="bg-transparent text-xl font-black uppercase tracking-tight text-white text-center border-b border-transparent focus:border-cyan-500/30 outline-none w-full"
-                  placeholder="USERNAME"
-                />
-                <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mt-1">{user.email}</p>
-              </div>
+              <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
             </div>
 
-            {/* My Challenge Entries */}
-            {myPosts.length > 0 && (
-              <div className="space-y-4">
-                 <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] ml-2">{t.myChallenges}</label>
-                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
-                    {myPosts.filter(p => p.challengeId).map(post => (
-                      <div key={post.id} className="shrink-0 w-32 space-y-2">
-                         <div className="aspect-[3/4] rounded-xl overflow-hidden border border-white/10">
-                            <img src={post.resultImage} className="w-full h-full object-cover" />
-                         </div>
-                         <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest truncate">ENTRY_LINKED</p>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-            )}
-
-            {/* Bio Section */}
-            <div className="space-y-4">
-               <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] ml-2">{t.bio}</label>
-               <textarea 
-                 value={bio}
-                 onChange={e => setBio(e.target.value)}
-                 className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-6 text-sm font-bold text-gray-300 focus:border-cyan-500/40 outline-none transition h-32 resize-none no-scrollbar"
-                 placeholder={t.bioPlaceholder}
-               />
-            </div>
-
-            {/* Visibility Section */}
-            <div className="space-y-4">
-               <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] ml-2">{t.visibility}</label>
-               <div className="space-y-3">
-                  <VisibilityOption type="public" label={t.public} />
-                  <VisibilityOption type="brands" label={t.brands} />
-                  <VisibilityOption type="private" label={t.private} />
-               </div>
+            <div className="mt-12 w-full space-y-4">
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">NEURAL_ID</label>
+              <input 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-white text-sm font-black uppercase tracking-widest outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] transition-all" 
+              />
             </div>
           </div>
 
-          <div className="mt-auto pt-10 space-y-4">
-             <button 
-               onClick={handleSave}
-               className="w-full py-5 tryonx-gradient rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
-             >
-               {t.save}
-             </button>
-             <button 
-               onClick={onLogout}
-               className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-red-500 hover:bg-red-500/10 transition-all"
-             >
-               {t.logout}
-             </button>
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">BİYO / MANİFESTO</label>
+            <textarea 
+              value={bio} 
+              onChange={e => setBio(e.target.value)} 
+              placeholder="Stil vizyonunuzu buraya yazın..." 
+              className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 text-xs font-medium text-gray-300 outline-none focus:border-purple-500/50 focus:bg-white/[0.08] transition-all h-40 resize-none leading-relaxed uppercase tracking-tight" 
+            />
           </div>
+
+          <div className="space-y-6">
+            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">ARENA GÖRÜNÜRLÜĞÜ</label>
+            <div className="grid grid-cols-1 gap-4">
+              {(['public', 'brands', 'private'] as ProfileVisibility[]).map((v) => (
+                <button 
+                  key={v} 
+                  onClick={() => setVisibility(v)} 
+                  className={`flex flex-col p-6 rounded-3xl border text-left transition-all relative overflow-hidden group/opt ${visibility === v ? 'bg-white/10 border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
+                >
+                  <span className={`text-[11px] font-black uppercase tracking-widest mb-1 ${visibility === v ? 'text-white' : 'text-gray-500'}`}>{t[v] || v}</span>
+                  <p className="text-[9px] font-bold text-gray-700 uppercase tracking-tight">Profil erişim protokolü: {v}</p>
+                  {visibility === v && <div className="absolute top-1/2 -translate-y-1/2 right-6 h-2 w-2 bg-cyan-500 rounded-full shadow-[0_0_100px_#00d2ff]"></div>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-10 space-y-4 border-t border-white/5 bg-black/80 backdrop-blur-2xl relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            className="w-full py-6 tryonx-gradient rounded-3xl text-[12px] font-black uppercase tracking-[0.3em] text-white shadow-2xl transition hover:brightness-110 active:scale-95 disabled:opacity-50"
+          >
+            {isSaving ? 'YÜKLENİYOR...' : 'DEĞİŞİKLİKLERİ KAYDET'}
+          </button>
+          <button onClick={onLogout} className="w-full py-5 bg-white/5 border border-white/5 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] text-red-500/70 hover:bg-red-500 hover:text-white transition-all">SİSTEMDEN AYRIL</button>
         </div>
       </div>
     </div>

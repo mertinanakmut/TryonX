@@ -76,6 +76,7 @@ const Header: React.FC<HeaderProps> = ({
           
           {currentUser ? (
             <div onClick={onOpenProfile} className="relative h-10 w-10 rounded-full border-2 border-white/10 overflow-hidden bg-black flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition">
+              {/* Corrected avatar to avatar_url to match User interface */}
               {currentUser.avatar_url ? <img src={currentUser.avatar_url} className="h-full w-full object-cover" /> : <span className="text-[12px] font-black text-white">{currentUser.name.charAt(0)}</span>}
             </div>
           ) : (
