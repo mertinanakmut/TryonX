@@ -53,7 +53,7 @@ const StudioView: React.FC<StudioViewProps> = ({
     <div className="animate-in fade-in duration-700">
       <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          <button onClick={() => onStateUpdate({ view: 'home', error: null })} className="h-10 w-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center">
+          <button onClick={() => onStateUpdate({ view: 'home', error: null, isLoading: false, status: 'idle' })} className="h-10 w-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div>
@@ -73,7 +73,9 @@ const StudioView: React.FC<StudioViewProps> = ({
             </div>
             
             <div className="space-y-6">
-              <ImageUploader label={t.controls.target} description={t.controls.targetDesc} image={state.personImage} onImageSelect={(b) => onStateUpdate({ personImage: b, error: null })} icon={<NeuralXIcon className="w-6 h-6" glow={false} />} />
+              <div className={`transition-all duration-500 ${state.garmentImage && !state.personImage ? 'ring-2 ring-cyan-500/50 rounded-[2.2rem] p-1' : ''}`}>
+                <ImageUploader label={t.controls.target} description={t.controls.targetDesc} image={state.personImage} onImageSelect={(b) => onStateUpdate({ personImage: b, error: null })} icon={<NeuralXIcon className="w-6 h-6" glow={false} />} />
+              </div>
               <ImageUploader label={t.controls.garment} description={t.controls.garmentDesc} image={state.garmentImage} onImageSelect={(b) => onStateUpdate({ garmentImage: b, error: null })} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>} />
               
               <div className="grid grid-cols-3 gap-2">
@@ -128,6 +130,12 @@ const StudioView: React.FC<StudioViewProps> = ({
                     <div className="mb-8 opacity-5"><NeuralXIcon className="w-48 h-48 mx-auto" glow={false} /></div>
                     <h3 className="text-2xl sm:text-3xl font-black tracking-tighter text-white mb-4 uppercase">{t.results.init}</h3>
                     <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.4em] leading-loose">{t.results.awaiting}</p>
+                    
+                    {state.garmentImage && !state.personImage && (
+                      <div className="mt-8 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl animate-pulse">
+                        <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Lütfen kendi fotoğrafınızı yükleyin</p>
+                      </div>
+                    )}
                   </div>
                 )
               )}
@@ -137,7 +145,11 @@ const StudioView: React.FC<StudioViewProps> = ({
               <div className="absolute bottom-6 left-6 right-6 z-50 animate-in slide-in-from-bottom-4">
                 <div className="bg-red-500/20 border border-red-500/40 backdrop-blur-xl p-4 rounded-2xl flex items-center gap-4">
                   <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center shrink-0"><svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12"/></svg></div>
-                  <p className="text-[10px] font-bold text-red-200 flex-1">{state.error}</p>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">SYNTHESIS_ERROR</p>
+                    <p className="text-[10px] font-bold text-red-200">{state.error}</p>
+                  </div>
+                  <button onClick={() => onStateUpdate({ error: null })} className="px-3 py-1 bg-white/10 rounded-lg text-[8px] font-black uppercase">DISMISS</button>
                 </div>
               </div>
             )}

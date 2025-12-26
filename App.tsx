@@ -77,6 +77,22 @@ const INITIAL_PRODUCTS: BrandProduct[] = [
     description: 'Yeni sezon Bershka kargo pantolon.',
     buyLink: 'https://www.bershka.com/tr/',
     likes: 310, views: 6200, comments: [], trendScore: 0
+  },
+  {
+    id: 'z2', brandId: 'zara', brandName: 'ZARA', brandLogo: 'https://logo.clearbit.com/zara.com',
+    name: 'Kısa Suni Deri Ceket', price: 2499, currency: '₺', category: 'tops',
+    imageUrl: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&h=800&fit=crop',
+    description: 'Nöral stüdyoda Zara deri ceket deneyimi.',
+    buyLink: 'https://www.zara.com/tr/',
+    likes: 120, views: 3400, comments: [], trendScore: 0
+  },
+  {
+    id: 'be2', brandId: 'bershka', brandName: 'BERSHKA', brandLogo: 'https://logo.clearbit.com/bershka.com',
+    name: 'Yırtık Bol Kesim Jean', price: 1299, currency: '₺', category: 'bottoms',
+    imageUrl: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600&h=800&fit=crop',
+    description: 'Bershka ikonik jean serisi.',
+    buyLink: 'https://www.bershka.com/tr/',
+    likes: 540, views: 7200, comments: [], trendScore: 0
   }
 ];
 
@@ -178,7 +194,7 @@ const App: React.FC = () => {
       });
       setAdvice(styleAdvice);
     } catch (err: any) {
-      updateState({ isLoading: false, status: 'error', error: err.message });
+      updateState({ isLoading: false, status: 'error', error: err.message, resultImage: null });
     }
   };
 
@@ -192,7 +208,7 @@ const App: React.FC = () => {
         onParticipate={(cid) => {
           const ch = state.challenges.find(c => c.id === cid);
           const pr = state.brandProducts.find(p => p.id === ch?.linkedProductId);
-          updateState({ activeChallengeId: cid, garmentImage: pr?.imageUrl || null, category: pr?.category || 'tops', view: 'studio', resultImage: null, error: null });
+          updateState({ activeChallengeId: cid, garmentImage: pr?.imageUrl || null, category: pr?.category || 'tops', view: 'studio', resultImage: null, error: null, status: 'idle', isLoading: false });
         }}
       />
     );
@@ -203,7 +219,7 @@ const App: React.FC = () => {
       <MarketplaceView 
         lang={lang} products={state.brandProducts}
         onBack={() => updateState({ view: 'home' })}
-        onTryOn={(p) => updateState({ garmentImage: p.imageUrl, category: p.category, view: 'studio', resultImage: null, error: null })}
+        onTryOn={(p) => updateState({ garmentImage: p.imageUrl, category: p.category, view: 'studio', resultImage: null, error: null, status: 'idle', isLoading: false })}
         onLike={(id) => updateState({ brandProducts: state.brandProducts.map(p => p.id === id ? {...p, likes: p.likes+1} : p)})}
         onComment={(id, text) => {}} 
         onView={() => {}}
@@ -230,7 +246,7 @@ const App: React.FC = () => {
       <Header 
         lang={lang} setLang={setLang} currentUser={state.currentUser}
         onViewTech={() => updateState({ view: 'tech' })} 
-        onViewStudio={() => updateState({ view: 'studio', activeChallengeId: null, error: null })}
+        onViewStudio={() => updateState({ view: 'studio', activeChallengeId: null, error: null, resultImage: null, status: 'idle', isLoading: false })}
         onViewHome={() => updateState({ view: 'home' })}
         onViewAuth={() => updateState({ view: 'auth' })}
         onViewMarketplace={() => updateState({ view: 'marketplace' })}
@@ -241,7 +257,7 @@ const App: React.FC = () => {
       />
       
       {showScanner && (
-        <PhygitalScanner lang={lang} onCapture={(b) => updateState({ garmentImage: b, view: 'studio', error: null })} onClose={() => setShowScanner(false)} />
+        <PhygitalScanner lang={lang} onCapture={(b) => updateState({ garmentImage: b, view: 'studio', error: null, resultImage: null, status: 'idle', isLoading: false })} onClose={() => setShowScanner(false)} />
       )}
 
       {showProfile && state.currentUser && (
@@ -274,7 +290,7 @@ const App: React.FC = () => {
                     Dünyanın en gelişmiş yapay zeka deneme stüdyosu. Zara, P&B ve dahası artık nöral ağda.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button onClick={() => updateState({ view: 'studio', activeChallengeId: null, error: null })} className="tryonx-gradient w-full sm:w-auto px-12 py-5 rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all">STÜDYOYU BAŞLAT</button>
+                    <button onClick={() => updateState({ view: 'studio', activeChallengeId: null, error: null, resultImage: null, status: 'idle', isLoading: false })} className="tryonx-gradient w-full sm:w-auto px-12 py-5 rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-all">STÜDYOYU BAŞLAT</button>
                     <button onClick={() => updateState({ view: 'marketplace' })} className="w-full sm:w-auto px-12 py-5 rounded-full border border-white/10 text-xs font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all">MARKETİ GEZ</button>
                   </div>
               </div>

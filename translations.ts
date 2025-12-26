@@ -1,6 +1,19 @@
 
 export const translations = {
   tr: {
+    // Add missing landing translations
+    landing: {
+      title: "TryonX",
+      tagline: "YENİ NESİL NÖRAL DENEYİM",
+      cta: "BİYOMETRİK BAĞLANTIYI BAŞLAT",
+      status: "SİSTEM_AKTİF",
+      nodes: "ÇEKİRDEK_DÜĞÜMLER",
+      latency: "GECİKME_SÜRESİ",
+      scanning: "BİYOMETRİ TARANIYOR",
+      secure: "GÜVENLİ_PROTOKOL",
+      ver: "VERSION_2.5",
+      footer: "TryonX Neural Synthesis Studio. Tüm hakları saklıdır."
+    },
     profile: {
       identity: "NÖRAL KİMLİK",
       edit: "PROFİLİ DÜZENLE",
@@ -229,6 +242,19 @@ export const translations = {
     }
   },
   en: {
+    // Add missing landing translations
+    landing: {
+      title: "TryonX",
+      tagline: "NEXT GEN NEURAL EXPERIENCE",
+      cta: "INITIALIZE BIOMETRIC LINK",
+      status: "SYSTEM_ACTIVE",
+      nodes: "CORE_NODES",
+      latency: "LATENCY",
+      scanning: "SCANNING BIOMETRICS",
+      secure: "SECURE_PROTOCOL",
+      ver: "VERSION_2.5",
+      footer: "TryonX Neural Synthesis Studio. All rights reserved."
+    },
     profile: {
       identity: "NEURAL IDENTITY",
       edit: "EDIT PROFILE",
