@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import StudioView from './components/StudioView';
@@ -20,9 +21,10 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('tr');
   const [showProfile, setShowProfile] = useState(false);
   const [marketFilter, setMarketFilter] = useState<string | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   const [state, setState] = useState<TryOnState>({
-    view: 'landing', 
+    view: 'landing', // İlk render'da landing, ancak useEffect bunu güncelleyecek
     currentUser: null,
     targetUser: null,
     personImage: null, garmentImage: null, resultImage: null,
@@ -43,66 +45,74 @@ const App: React.FC = () => {
 
   const updateState = (updates: Partial<TryOnState>) => setState(p => ({ ...p, ...updates }));
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (!error && profile) return profile as User;
+    } catch (e) {
+      console.error("Profile Fetch Error:", e);
+    }
+    return null;
+  };
+
   useEffect(() => {
     const initApp = async () => {
       try {
+        // 1. Önce mevcut oturumu al
         const { data: { session } } = await supabase.auth.getSession();
-        let currentUserData = null;
         
         if (session?.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (!profileError && profile) {
-            currentUserData = profile;
+          const profile = await fetchUserProfile(session.user.id);
+          if (profile) {
+            updateState({ currentUser: profile, view: 'home' });
+          } else {
+            // Profil henüz oluşturulmamışsa bile oturum var demektir
+            updateState({ view: 'home' });
           }
+        } else {
+          // Oturum yoksa landing'de kal
+          updateState({ view: 'landing' });
         }
-
-        const [productsRes, challengesRes, profilesRes] = await Promise.allSettled([
+        
+        // 2. Global verileri arka planda çek (Bloklamadan)
+        Promise.allSettled([
           supabase.from('products').select('*'),
           supabase.from('challenges').select('*'),
           supabase.from('profiles').select('*')
-        ]);
-
-        const brandProducts = productsRes.status === 'fulfilled' ? (productsRes.value.data as BrandProduct[] || []) : [];
-        const challenges = challengesRes.status === 'fulfilled' ? (challengesRes.value.data as StyleChallenge[] || []) : [];
-        const allUsers = profilesRes.status === 'fulfilled' ? (profilesRes.value.data as User[] || []) : [];
-
-        updateState({
-          brandProducts,
-          challenges,
-          allUsers,
-          currentUser: currentUserData
+        ]).then((results) => {
+          const brandProducts = results[0].status === 'fulfilled' ? (results[0].value.data as BrandProduct[] || []) : [];
+          const challenges = results[1].status === 'fulfilled' ? (results[1].value.data as StyleChallenge[] || []) : [];
+          const allUsers = results[2].status === 'fulfilled' ? (results[2].value.data as User[] || []) : [];
+          updateState({ brandProducts, challenges, allUsers });
         });
+
       } catch (e) {
-        console.error("Initialization failed:", e);
+        console.error("Initialization error:", e);
+      } finally {
+        setIsAuthReady(true);
       }
     };
 
     initApp();
 
+    // 3. Oturum değişikliklerini dinle (Özellikle yenileme sonrası senkronizasyon için)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (event === 'SIGNED_IN') {
-             updateState({ currentUser: profile, view: 'home' });
-          } else {
-             updateState({ currentUser: profile });
+          const profile = await fetchUserProfile(session.user.id);
+          if (profile) {
+            updateState({ currentUser: profile });
+            // Eğer kullanıcı landing sayfasındaysa ve giriş yapmışsa ana sayfaya at
+            setState(prev => prev.view === 'landing' || prev.view === 'auth' ? { ...prev, view: 'home' } : prev);
           }
-        } else {
-          updateState({ currentUser: null });
         }
-      } catch (err) {
-        console.error("Auth change error:", err);
+      } else if (event === 'SIGNED_OUT') {
+        updateState({ currentUser: null, view: 'landing' });
       }
     });
 
@@ -110,6 +120,23 @@ const App: React.FC = () => {
       if (subscription) subscription.unsubscribe();
     };
   }, []);
+
+  const handleUpdateProfile = async (updates: Partial<User>) => {
+    if (!state.currentUser) return;
+    try {
+      const { id, email, ...updatableFields } = updates;
+      const { error } = await supabase
+        .from('profiles')
+        .update(updatableFields)
+        .eq('id', state.currentUser.id);
+      
+      if (error) throw error;
+      const freshProfile = await fetchUserProfile(state.currentUser.id);
+      if (freshProfile) updateState({ currentUser: freshProfile });
+    } catch (err) {
+      console.error("Profile update error:", err);
+    }
+  };
 
   const handleTryOnExecute = async () => {
     if (!state.personImage || !state.garmentImage) return;
@@ -131,50 +158,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateProfile = async (updates: Partial<User>) => {
-    if (state.currentUser) {
-      try {
-        const { id, email, ...updatableFields } = updates;
-        const { error } = await supabase
-          .from('profiles')
-          .update(updatableFields)
-          .eq('id', state.currentUser.id);
-        
-        if (!error) {
-          updateState({ currentUser: { ...state.currentUser, ...updatableFields } });
-        }
-      } catch (err) {
-        console.error("Update profile error:", err);
-      }
-    }
-  };
-
   const handleFollow = async (targetId: string) => {
-    if (!state.currentUser) {
-      updateState({ view: 'auth' });
-      return;
-    }
+    if (!state.currentUser) { updateState({ view: 'auth' }); return; }
     try {
       const targetUser = state.allUsers.find(u => u.id === targetId);
       if (!targetUser) return;
-
       const isFollowing = state.currentUser.following.includes(targetId);
       const updatedFollowing = isFollowing 
         ? state.currentUser.following.filter(id => id !== targetId)
         : [...state.currentUser.following, targetId];
       
       await supabase.from('profiles').update({ following: updatedFollowing }).eq('id', state.currentUser.id);
-      
-      const updatedFollowers = isFollowing 
-        ? targetUser.followers.filter(id => id !== state.currentUser?.id)
-        : [...targetUser.followers, state.currentUser!.id];
-      await supabase.from('profiles').update({ followers: updatedFollowers }).eq('id', targetId);
-
       const { data: profiles } = await supabase.from('profiles').select('*');
       updateState({ allUsers: (profiles as User[]) || [] });
-    } catch (err) {
-      console.error("Follow error:", err);
-    }
+    } catch (err) { console.error("Follow error:", err); }
   };
 
   const NeuralXIcon = ({ className }: { className?: string }) => (
@@ -189,28 +186,19 @@ const App: React.FC = () => {
     </svg>
   );
 
-  const renderMarquee = () => {
-    const brands = Array.from(new Set(state.brandProducts.map(p => p.brandId))).map(id => {
-      const brandProd = state.brandProducts.find(p => p.brandId === id);
-      return { id, name: brandProd?.brandName || id, url: brandProd?.brandLogo || '' };
-    }).filter(b => b.url);
-    if (brands.length === 0) return null;
+  // Uygulama tamamen hazır olana kadar yükleme ekranını göster
+  if (!isAuthReady) {
     return (
-      <div className="relative flex overflow-hidden border-y border-white/5 py-10 md:py-16 bg-black group/marquee">
-        <div className="flex animate-marquee whitespace-nowrap">
-          {[...brands, ...brands, ...brands].map((brand, idx) => (
-            <div key={`${brand.id}-${idx}`} onClick={() => { setMarketFilter(brand.id); updateState({ view: 'marketplace' }); }} className="mx-8 md:mx-16 flex flex-col items-center gap-4 md:gap-6 group cursor-pointer shrink-0 transition-all hover:scale-110">
-              <div className="h-10 w-10 md:h-16 md:w-16 relative rounded-xl md:rounded-2xl overflow-hidden border border-white/5 bg-white/[0.02] flex items-center justify-center p-2 md:p-3 shadow-2xl">
-                <img src={brand.url} className="h-full w-full object-contain grayscale brightness-200 opacity-20 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500" alt={brand.name} />
-              </div>
-              <span className="text-[8px] md:text-[10px] font-black text-white/10 tracking-[0.2em] md:tracking-[0.4em] uppercase group-hover:text-cyan-400 transition-colors">{brand.name}</span>
-            </div>
-          ))}
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="h-12 w-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-cyan-500 font-black text-[10px] tracking-[0.5em] uppercase animate-pulse">CONNECTING_CORE</p>
         </div>
       </div>
     );
-  };
+  }
 
+  // Auth hazır olduğunda view'a göre render et
   if (state.view === 'landing') {
     return <LandingView lang={lang} setLang={setLang} onEnter={() => updateState({ view: 'home' })} />;
   }
@@ -227,10 +215,8 @@ const App: React.FC = () => {
         onViewAdmin={() => updateState({ view: 'brand' })}
         onViewAuth={() => updateState({ view: 'auth' })}
         onLogout={async () => { 
-          try {
-            await supabase.auth.signOut();
-            updateState({ currentUser: null, view: 'home' }); 
-          } catch (e) {}
+          await supabase.auth.signOut();
+          updateState({ currentUser: null, view: 'landing' }); 
         }}
         onOpenProfile={() => setShowProfile(true)}
         onSearch={(q) => updateState({ searchQuery: q, view: q ? 'search' : 'home' })}
@@ -243,112 +229,81 @@ const App: React.FC = () => {
             <div className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-6 md:pt-12">
               <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[5rem] bg-[#020202] border border-white/5 p-8 md:p-32 shadow-[0_0_100px_rgba(0,0,0,1)] group min-h-[500px] md:min-h-[750px] flex items-center">
                 <div className="absolute inset-0 studio-grid opacity-10 pointer-events-none"></div>
-                
-                {/* Fixed Hologram Animation Container */}
                 <div className="absolute top-1/2 left-1/2 w-[350px] h-[350px] md:w-[900px] md:h-[900px] pointer-events-none hologram-pulse z-0">
                   <div className="w-full h-full rotate-x-slow flex items-center justify-center">
                     <NeuralXIcon className="w-full h-full drop-shadow-[0_0_40px_rgba(0,210,255,0.3)] md:drop-shadow-[0_0_80px_rgba(0,210,255,0.4)]" />
                   </div>
                 </div>
-
                 <div className="relative z-10 max-w-4xl space-y-8 md:space-y-12 text-center md:text-left mx-auto md:mx-0">
                    <div className="flex items-center justify-center md:justify-start gap-4 mb-2 md:mb-4 float-tech">
                       <div className="h-[2px] w-8 md:w-16 bg-cyan-500 shadow-[0_0_100px_rgba(0,210,255,0.4)]"></div>
                       <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.5em] md:tracking-[0.8em] text-cyan-500">NEURAL_SYNTHESIS</span>
                    </div>
-                   <h2 className="text-5xl sm:text-8xl md:text-[13rem] font-black mb-6 md:mb-12 tracking-tighter leading-[0.85] md:leading-[0.75] uppercase drop-shadow-[0_10px_30px_rgba(0,0,0,1)]">
+                   <h2 className="text-5xl sm:text-8xl md:text-[13rem] font-black mb-6 md:mb-12 tracking-tighter leading-[0.85] md:leading-[0.75] uppercase">
                     GET VIRTUAL <br/>
                     <span className="tryonx-text-gradient animate-pulse">STYLE</span>
                    </h2>
                    <p className="text-gray-400 text-sm md:text-2xl font-medium max-w-xl mb-10 md:mb-16 leading-relaxed uppercase tracking-tight mx-auto md:mx-0">Biyometrik eşleşme teknolojisiyle tarzını dijital evrende yeniden inşa et.</p>
                    <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-center md:justify-start">
-                     <button onClick={() => updateState({ view: 'studio' })} className="w-full sm:w-auto bg-white text-black px-12 md:px-20 py-4 md:py-8 rounded-full text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.4em] shadow-[0_20px_60px_rgba(255,255,255,0.1)] hover:scale-105 transition-all">STÜDYOYU BAŞLAT</button>
+                     <button onClick={() => updateState({ view: 'studio' })} className="w-full sm:w-auto bg-white text-black px-12 md:px-20 py-4 md:py-8 rounded-full text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.4em] hover:scale-105 transition-all">STÜDYOYU BAŞLAT</button>
                      <button onClick={() => updateState({ view: 'marketplace' })} className="w-full sm:w-auto px-10 md:px-14 py-4 md:py-7 rounded-full border border-white/10 text-[10px] md:text-sm font-black uppercase tracking-[0.1em] md:tracking-[0.2em] backdrop-blur-xl hover:bg-white hover:text-black transition-all">MARKETİ GEZ</button>
                    </div>
                 </div>
               </div>
             </div>
-
-            {renderMarquee()}
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-12 md:space-y-24">
-              <div className="space-y-8 md:space-y-16">
-                <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end border-b border-white/5 pb-8 md:pb-12 gap-4">
-                   <h3 className="text-3xl md:text-6xl font-black tracking-tighter uppercase leading-none">NEURAL ARENA</h3>
-                   <button onClick={() => updateState({ view: 'arena' })} className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition group flex items-center gap-2">ARENAYI KEŞFET <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} /></svg></button>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
-                  <div className="lg:col-span-8 group relative aspect-[16/9] md:aspect-[21/10] rounded-[2rem] md:rounded-[4rem] overflow-hidden border border-white/10 cursor-pointer shadow-2xl" onClick={() => updateState({ view: 'arena' })}>
-                    {state.challenges.length > 0 && (
-                      <>
-                        <img src={state.challenges[0]?.bannerImage} className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent p-6 md:p-12 flex flex-col justify-end">
-                          <span className="bg-cyan-500 text-black px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(0,210,255,0.4)] w-fit mb-3">{state.challenges[0]?.tag}</span>
-                          <h4 className="text-2xl md:text-5xl font-black uppercase tracking-tight">{state.challenges[0]?.title}</h4>
-                        </div>
-                      </>
-                    )}
+            {state.view === 'home' && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-12 md:space-y-24">
+                <div className="space-y-8 md:space-y-16">
+                  <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end border-b border-white/5 pb-8 md:pb-12 gap-4">
+                     <h3 className="text-3xl md:text-6xl font-black tracking-tighter uppercase leading-none">NEURAL ARENA</h3>
+                     <button onClick={() => updateState({ view: 'arena' })} className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition group flex items-center gap-2">ARENAYI KEŞFET</button>
                   </div>
-                  <div className="lg:col-span-4 bg-[#080808] border border-white/5 rounded-[2rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col justify-between shadow-2xl">
-                    <h5 className="text-[10px] md:text-[11px] font-black text-gray-500 uppercase tracking-widest mb-6 md:mb-10">MİMARLAR</h5>
-                    <div className="space-y-6 md:space-y-8">
-                        {state.allUsers.slice(0, 3).map((u, i) => (
-                          <div key={u.id} onClick={() => updateState({ targetUser: u, view: 'user_profile' })} className="flex items-center gap-4 md:gap-6 group cursor-pointer">
-                            <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-cyan-500 transition-colors">
-                               <img src={u.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                            </div>
-                            <p className="text-sm md:text-lg font-black uppercase group-hover:text-cyan-400 transition-colors truncate">{u.name}</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
+                    <div className="lg:col-span-8 group relative aspect-[16/9] md:aspect-[21/10] rounded-[2rem] md:rounded-[4rem] overflow-hidden border border-white/10 cursor-pointer shadow-2xl" onClick={() => updateState({ view: 'arena' })}>
+                      {state.challenges.length > 0 && (
+                        <>
+                          <img src={state.challenges[0]?.bannerImage} className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent p-6 md:p-12 flex flex-col justify-end">
+                            <span className="bg-cyan-500 text-black px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest w-fit mb-3">{state.challenges[0]?.tag}</span>
+                            <h4 className="text-2xl md:text-5xl font-black uppercase tracking-tight">{state.challenges[0]?.title}</h4>
                           </div>
-                        ))}
+                        </>
+                      )}
+                    </div>
+                    <div className="lg:col-span-4 bg-[#080808] border border-white/5 rounded-[2rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col justify-between shadow-2xl">
+                      <h5 className="text-[10px] md:text-[11px] font-black text-gray-500 uppercase tracking-widest mb-6 md:mb-10">MİMARLAR</h5>
+                      <div className="space-y-6 md:space-y-8">
+                          {state.allUsers.slice(0, 3).map((u, i) => (
+                            <div key={u.id} onClick={() => updateState({ targetUser: u, view: 'user_profile' })} className="flex items-center gap-4 md:gap-6 group cursor-pointer">
+                              <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-cyan-500 transition-colors">
+                                 <img src={u.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                              </div>
+                              <p className="text-sm md:text-lg font-black uppercase group-hover:text-cyan-400 transition-colors truncate">{u.name}</p>
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
-        {state.view === 'search' && (
-          <UserSearchView query={state.searchQuery} users={state.allUsers} onViewProfile={(u) => updateState({ targetUser: u, view: 'user_profile' })} />
-        )}
-
-        {state.view === 'user_profile' && state.targetUser && (
-          <UserProfileView user={state.targetUser} isFollowing={state.currentUser?.following.includes(state.targetUser.id) || false} onFollow={() => handleFollow(state.targetUser!.id)} onBack={() => updateState({ view: 'home', targetUser: null })} />
-        )}
-
-        {state.view === 'studio' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 md:py-16">
-            <StudioView state={state} lang={lang} onStateUpdate={updateState} onExecute={handleTryOnExecute} onSave={() => {}} onShare={() => {}} loadingStep={0} setShowScanner={() => {}} />
-          </div>
-        )}
-        
-        {state.view === 'marketplace' && (
-          <MarketplaceView lang={lang} products={marketFilter ? state.brandProducts.filter(p => p.brandId === marketFilter) : state.brandProducts} onBack={() => updateState({ view: 'home' })} onTryOn={(p) => updateState({ garmentImage: p.imageUrl, category: p.category, view: 'studio' })} onLike={() => {}} onComment={() => {}} onView={() => {}} onBuy={(l) => window.open(l, '_blank')} />
-        )}
-
-        {state.view === 'arena' && (
-          <ArenaView lang={lang} challenges={state.challenges} posts={state.runwayPosts} architects={state.architects} products={state.brandProducts} onBack={() => updateState({ view: 'home' })} onVote={() => {}} onParticipate={() => {}} onComment={() => {}} onSave={() => {}} />
-        )}
-
-        {state.view === 'auth' && (
-          <AuthView lang={lang} onSuccess={(user) => {
-            updateState({ currentUser: user, view: 'home' });
-          }} onCancel={() => updateState({ view: 'home' })} />
-        )}
-
-        {state.view === 'brand' && (
-          <BrandDashboard lang={lang} products={state.brandProducts} challenges={state.challenges} runwayPosts={state.runwayPosts} onBack={() => updateState({ view: 'home' })} onAddProduct={() => {}} onDeleteProduct={() => {}} onAddChallenge={() => {}} onDeleteChallenge={() => {}} onUpdateBrand={() => {}} />
-        )}
+        {state.view === 'search' && <UserSearchView query={state.searchQuery} users={state.allUsers} onViewProfile={(u) => updateState({ targetUser: u, view: 'user_profile' })} />}
+        {state.view === 'user_profile' && state.targetUser && <UserProfileView user={state.targetUser} isFollowing={state.currentUser?.following.includes(state.targetUser.id) || false} onFollow={() => handleFollow(state.targetUser!.id)} onBack={() => updateState({ view: 'home' })} />}
+        {state.view === 'studio' && <div className="max-w-7xl mx-auto px-4 py-8"><StudioView state={state} lang={lang} onStateUpdate={updateState} onExecute={handleTryOnExecute} onSave={() => {}} onShare={() => {}} loadingStep={0} setShowScanner={() => {}} /></div>}
+        {state.view === 'marketplace' && <MarketplaceView lang={lang} products={marketFilter ? state.brandProducts.filter(p => p.brandId === marketFilter) : state.brandProducts} onBack={() => updateState({ view: 'home' })} onTryOn={(p) => updateState({ garmentImage: p.imageUrl, category: p.category, view: 'studio' })} onLike={() => {}} onComment={() => {}} onView={() => {}} onBuy={(l) => window.open(l, '_blank')} />}
+        {state.view === 'arena' && <ArenaView lang={lang} challenges={state.challenges} posts={state.runwayPosts} architects={state.architects} products={state.brandProducts} onBack={() => updateState({ view: 'home' })} onVote={() => {}} onParticipate={() => {}} onComment={() => {}} onSave={() => {}} />}
+        {state.view === 'auth' && <AuthView lang={lang} onSuccess={(user) => updateState({ currentUser: user, view: 'home' })} onCancel={() => updateState({ view: 'home' })} />}
+        {state.view === 'brand' && <BrandDashboard lang={lang} products={state.brandProducts} challenges={state.challenges} runwayPosts={state.runwayPosts} onBack={() => updateState({ view: 'home' })} onAddProduct={() => {}} onDeleteProduct={() => {}} onAddChallenge={() => {}} onDeleteChallenge={() => {}} onUpdateBrand={() => {}} />}
       </main>
 
       {showProfile && state.currentUser && (
         <ProfileSidebar lang={lang} user={state.currentUser} onClose={() => setShowProfile(false)} onLogout={async () => { 
-          try {
-            await supabase.auth.signOut();
-            updateState({ currentUser: null }); 
-            setShowProfile(false); 
-          } catch (e) {}
+          await supabase.auth.signOut();
+          updateState({ currentUser: null, view: 'landing' }); 
+          setShowProfile(false); 
         }} onUpdateUser={handleUpdateProfile} />
       )}
       <LiveStylist resultImage={state.resultImage} lang={lang} />

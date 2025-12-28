@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './mert';
+import App from './mert.tsx';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

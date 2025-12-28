@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { Language, translations } from '../translations';
 
@@ -48,14 +48,13 @@ const LiveStylist: React.FC<LiveStylistProps> = ({ resultImage, lang }) => {
     return buffer;
   };
 
+  // Fixed: Always use process.env.API_KEY directly for initialization as per guidelines.
   const startSession = async () => {
-    const apiKey = (globalThis as any).process?.env?.API_KEY;
-    if (!apiKey) return;
     setIsConnecting(true);
     
     try {
-      // Create a new GoogleGenAI instance right before making an API call.
-      const ai = new GoogleGenAI({ apiKey });
+      // Create a new GoogleGenAI instance right before making an API call to ensure it uses the most up-to-date API key.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       
       const session = await ai.live.connect({

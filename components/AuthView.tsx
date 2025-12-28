@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Language, translations } from '../translations';
 import { User } from '../types';
@@ -28,11 +27,16 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
     setIsProcessing(true);
     setError(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
       if (mode === 'register') {
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: cleanEmail,
           password,
+          options: {
+            data: { full_name: name.trim() }
+          }
         });
 
         if (authError) throw authError;
@@ -40,8 +44,8 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
 
         const newUserProfile = {
           id: authData.user.id,
-          email: email.trim().toLowerCase(),
-          name: name.trim() || email.split('@')[0],
+          email: cleanEmail,
+          name: name.trim() || cleanEmail.split('@')[0],
           role: 'user' as const,
           visibility: 'public' as const,
           followers: [],
@@ -50,7 +54,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
 
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([newUserProfile]);
+          .upsert([newUserProfile]);
 
         if (profileError) {
           console.error("Profile creation error:", profileError);
@@ -59,24 +63,26 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         onSuccess(newUserProfile as User);
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
           password,
         });
 
         if (authError) throw authError;
         if (!authData.user) throw new Error("Giriş yapılamadı.");
 
+        // Fetch the profile to ensure we have the correct role (admin/brand/user)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', authData.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError || !profile) {
+          // If profile missing for some reason, create a fallback one
           const recoveryProfile = {
             id: authData.user.id,
             email: authData.user.email!,
-            name: authData.user.email!.split('@')[0],
+            name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
             role: 'user' as const,
             visibility: 'public' as const,
             followers: [],
@@ -90,16 +96,26 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
       }
     } catch (err: any) {
       console.error("Auth process failed:", err);
-      setError(err.message || "İşlem sırasında bir hata oluştu.");
+      let errorMsg = err.message || "İşlem sırasında bir hata oluştu.";
+      
+      // Better error messages for common Supabase Auth errors
+      if (err.message === "Invalid login credentials") {
+        errorMsg = lang === 'tr' ? "E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin veya kayıt olun." : "Invalid email or password. Please check your credentials or sign up.";
+      } else if (err.message === "User already registered") {
+        errorMsg = lang === 'tr' ? "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin." : "This email is already registered. Try logging in.";
+      } else if (err.message === "Password should be at least 6 characters") {
+        errorMsg = lang === 'tr' ? "Şifre en az 6 karakter olmalıdır." : "Password should be at least 6 characters.";
+      }
+      
+      setError(errorMsg);
       setIsProcessing(false);
     }
-    // Note: We don't setIsProcessing(false) on success because the view will unmount
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-6 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-6 backdrop-blur-xl animate-in fade-in duration-300">
       <div className="relative w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 shadow-[0_0_100px_rgba(0,0,0,1)]">
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-24 rounded-3xl tryonx-gradient p-1 flex items-center justify-center">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-24 rounded-3xl tryonx-gradient p-1 flex items-center justify-center shadow-2xl">
            <div className="h-full w-full bg-black rounded-[1.4rem] flex items-center justify-center">
               <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none">
                 <path d="M19 5L5 19" stroke="cyan" strokeWidth="3" strokeLinecap="round" />
@@ -113,7 +129,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         </h2>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[11px] font-black uppercase text-center">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[11px] font-black uppercase text-center animate-in slide-in-from-top-4">
             {error}
           </div>
         )}
@@ -144,7 +160,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
             type="submit" disabled={isProcessing}
             className="w-full py-5 tryonx-gradient rounded-2xl font-black uppercase tracking-widest text-white disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
           >
-            {isProcessing ? t.processing : (mode === 'login' ? t.loginBtn : t.registerBtn)}
+            {isProcessing ? (lang === 'tr' ? "İŞLENİYOR..." : "PROCESSING...") : (mode === 'login' ? t.loginBtn : t.registerBtn)}
           </button>
         </form>
 

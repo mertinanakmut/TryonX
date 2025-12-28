@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { translations, Language } from '../translations';
 import { User } from '../types';
@@ -24,7 +25,11 @@ const Header: React.FC<HeaderProps> = ({
   onSearch, searchQuery
 }) => {
   const t = translations[lang].header;
-  const hasPanelAccess = currentUser?.role === 'admin' || currentUser?.role === 'brand';
+  
+  // Robust Role Check: Admin, Brand veya büyük harfle ADMIN/BRAND
+  const rawRole = currentUser?.role?.toLowerCase() || 'user';
+  const hasPanelAccess = rawRole === 'admin' || rawRole === 'brand';
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const NavItems = () => (
@@ -33,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({
       <button onClick={() => { onViewMarketplace(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-gray-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">{t.showcase}</button>
       <button onClick={() => { onViewArena(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-gray-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">{t.network}</button>
       {hasPanelAccess && (
-        <button onClick={() => { onViewAdmin(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-cyan-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">PANEL</button>
+        <button onClick={() => { onViewAdmin(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-cyan-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">YÖNETİM</button>
       )}
     </>
   );
@@ -41,14 +46,13 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-[100] w-full border-b border-white/5 bg-black/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 md:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Left: Logo */}
         <div onClick={onViewHome} className="flex items-center gap-2 md:gap-3 cursor-pointer group shrink-0 z-[110]">
           <div className="relative h-8 w-8 md:h-11 md:w-11 rounded-lg md:rounded-xl bg-white/[0.03] flex items-center justify-center border border-white/10 overflow-hidden transition-all group-hover:border-white/30">
             <svg className="h-5 w-5 md:h-6 md:w-6 text-white" viewBox="0 0 24 24" fill="none">
-              <path d="M19 5L5 19" stroke="url(#logo_grad_main)" strokeWidth="3" strokeLinecap="round" />
+              <path d="M19 5L5 19" stroke="url(#logo_grad_main_v3)" strokeWidth="3" strokeLinecap="round" />
               <path d="M5 5L19 19" stroke="white" strokeWidth="3" strokeLinecap="round" />
               <defs>
-                <linearGradient id="logo_grad_main" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
+                <linearGradient id="logo_grad_main_v3" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#00d2ff" /><stop offset="1" stopColor="#9d50bb" />
                 </linearGradient>
               </defs>
@@ -60,12 +64,10 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
         
-        {/* Center: Nav (Desktop) */}
         <nav className="hidden lg:flex items-center gap-8">
           <NavItems />
         </nav>
 
-        {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-4 shrink-0 z-[110]">
           <div className="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-full px-4 py-1.5 gap-2 group focus-within:border-cyan-500/50 transition-all">
             <input 
@@ -92,7 +94,6 @@ const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Mobile Menu Toggle */}
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden h-8 w-8 flex flex-col items-center justify-center gap-1.5">
             <span className={`h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'w-5 rotate-45 translate-y-2' : 'w-5'}`} />
             <span className={`h-0.5 bg-white transition-all ${isMobileMenuOpen ? 'opacity-0' : 'w-5'}`} />
@@ -101,20 +102,10 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-2xl border-b border-white/5 p-6 animate-in slide-in-from-top duration-300">
           <nav className="flex flex-col gap-2">
             <NavItems />
-            <div className="pt-4 mt-2 border-t border-white/5 flex gap-4">
-               <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => onSearch(e.target.value)}
-                  placeholder="MİMAR ARA..." 
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none text-white placeholder-gray-700" 
-                />
-            </div>
           </nav>
         </div>
       )}
