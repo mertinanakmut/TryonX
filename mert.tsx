@@ -47,39 +47,49 @@ const App: React.FC = () => {
   // Initialize Data from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      const { data: products } = await supabase.from('products').select('*');
-      const { data: challenges } = await supabase.from('challenges').select('*');
-      const { data: profiles } = await supabase.from('profiles').select('*');
+      try {
+        const { data: products } = await supabase.from('products').select('*');
+        const { data: challenges } = await supabase.from('challenges').select('*');
+        const { data: profiles } = await supabase.from('profiles').select('*');
 
-      const { data: { session } } = await supabase.auth.getSession();
-      let currentUser = null;
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        currentUser = profile;
+        const { data: { session } } = await supabase.auth.getSession();
+        let currentUser = null;
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          currentUser = profile;
+        }
+
+        updateState({
+          brandProducts: (products as BrandProduct[]) || [],
+          challenges: (challenges as StyleChallenge[]) || [],
+          allUsers: (profiles as User[]) || [],
+          currentUser: currentUser
+        });
+      } catch (e) {
+        console.error("Initial fetch error:", e);
       }
-
-      updateState({
-        brandProducts: (products as BrandProduct[]) || [],
-        challenges: (challenges as StyleChallenge[]) || [],
-        allUsers: (profiles as User[]) || [],
-        currentUser: currentUser
-      });
     };
 
     fetchData();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
-        updateState({ currentUser: profile });
+        
+        // Giriş yapıldığında veya oturum yenilendiğinde view'ı home yapıyoruz
+        if (event === 'SIGNED_IN') {
+           updateState({ currentUser: profile, view: 'home' });
+        } else {
+           updateState({ currentUser: profile });
+        }
       } else {
         updateState({ currentUser: null });
       }
@@ -110,13 +120,16 @@ const App: React.FC = () => {
 
   const handleUpdateProfile = async (updates: Partial<User>) => {
     if (state.currentUser) {
+      // 400 Bad Request hatasını çözmek için: primary key (id) veya değiştirilemez (email) alanları temizle
+      const { id, email, ...updatableFields } = updates;
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(updatableFields)
         .eq('id', state.currentUser.id);
       
       if (!error) {
-        updateState({ currentUser: { ...state.currentUser, ...updates } });
+        updateState({ currentUser: { ...state.currentUser, ...updatableFields } });
       } else {
         console.error("Profile update error:", error);
       }
