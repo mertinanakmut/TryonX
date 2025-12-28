@@ -33,53 +33,6 @@ export const translations = {
         private: "Profiliniz sadece sizin için görünürdür."
       }
     },
-    arena: {
-      title: "NÖRAL ARENA",
-      subtitle: "STİL MİMARLARI VE PİST MÜCADELELERİ",
-      activeChallenges: "AKTİF MÜCADELELER",
-      runway: "PİST / RUNWAY",
-      architects: "STİL MİMARLARI",
-      vote: "OY VER",
-      participate: "KATIL",
-      prize: "ÖDÜL",
-      deadline: "SON TARİH",
-      votes: "Oy",
-      clones: "Klon",
-      briefing: "MİSYON ÖZETİ",
-      requirements: "ŞARTLAR VE KURALLAR",
-      linkedProduct: "GEREKLİ ÜRÜN",
-      startChallenge: "SENTEZİ BAŞLAT",
-      noEntries: "Henüz katılım yok."
-    },
-    brandPanel: {
-      title: "MARKA PARTNER PANELİ",
-      subtitle: "ÜRÜNLERİNİZİ VE YARIŞMALARINIZI YÖNETİN",
-      uploadProduct: "YENİ ÜRÜN YÜKLE",
-      manageChallenges: "YARIŞMALARI YÖNET",
-      productName: "Ürün Adı",
-      price: "Fiyat (₺)",
-      description: "Açıklama",
-      category: "Kategori",
-      buyLink: "Satın Alma Linki",
-      stats: "İstatistikler",
-      engagement: "Etkileşim",
-      activeProducts: "Aktif Ürünler",
-      save: "YAYINLA",
-      delete: "SİL",
-      inspect: "KATILIMLARI İNCELE",
-      totalLikes: "TOPLAM BEĞENİ",
-      totalViews: "TOPLAM GÖRÜNTÜLENME",
-      avgTrend: "ORTALAMA TREND",
-      back: "GERİ DÖN",
-      challengeTitle: "Yarışma Başlığı",
-      challengeTag: "Hashtag",
-      challengePrize: "Ödül",
-      challengeDeadline: "Bitiş Tarihi",
-      challengeBanner: "Görsel URL (Banner)",
-      challengeDesc: "Açıklama/Tema",
-      challengeRules: "Kurallar (Her satıra bir tane)",
-      linkedProductSelect: "Gerekli Ürün Seçimi"
-    },
     header: {
       studio: "STÜDYO",
       showcase: "MARKET",
@@ -124,51 +77,6 @@ export const translations = {
       source: "KAYNAK",
       render: "TRYONX ÇIKTISI"
     },
-    personalization: {
-      successTitle: "Hoş Geldin — Biyometrik Veri Sentezlendi",
-      successDesc: "Vücut ölçülerin nöral çekirdeğe başarıyla kaydedildi.",
-      continueBtn: "DEVAM ET",
-      editMeasurements: "ÖLÇÜLERİ DÜZENLE",
-      styleTitle: "TARZ TERCİHLERİ",
-      styleDesc: "Tarzınızı analiz ediyoruz.",
-      styles: {
-        casual: "GÜNLÜK",
-        sport: "SPOR",
-        classic: "KLASİK",
-        street: "SOKAK",
-        minimal: "MİNİMAL"
-      },
-      fitTitle: "KALIP TERCİHİ",
-      fitDesc: "Kesim tercihinizi seçin.",
-      fits: {
-        slim: "SLIM FIT",
-        regular: "REGULAR FIT",
-        relaxed: "OVERSIZE"
-      },
-      comfortLabel: "KONFOR MODU",
-      comfortDesc: "Rahat kesimlere öncelik verilir.",
-      consentTitle: "GİZLİLİK",
-      consentDesc: "Verileriniz şifrelenir.",
-      consentCheck: "Onaylıyorum.",
-      policyLink: "Veri Politikası",
-      finishBtn: "TAMAMLA",
-      skip: "ATLA"
-    },
-    bodyProfile: {
-      title: "BİYOMETRİK PROFİL",
-      subtitle: "ÖLÇÜMLERİNİZİ GİRİN",
-      height: "BOY (CM)",
-      weight: "KİLO (KG)",
-      chest: "GÖĞÜS (CM)",
-      waist: "BEL (CM)",
-      hips: "KALÇA (CM)",
-      save: "KAYDET",
-      skip: "ATLA",
-      skipWarning: "Hassasiyet azalabilir.",
-      privacy: "Verileriniz şifrelenir.",
-      unitLabel: "BİRİM",
-      validationError: "Geçersiz değer."
-    },
     auth: {
       loginTitle: "GİRİŞ",
       registerTitle: "KAYIT",
@@ -186,60 +94,89 @@ export const translations = {
       processing: "İŞLENİYOR...",
       success: "BAŞARILI"
     },
-    advice: {
-      report: "STİL RAPORU",
-      insight: "İÇGÖRÜ",
-      shop: "SATIN AL",
-      source: "KAYNAK",
-      vibe: "TARZ"
-    },
     live: {
       talk: "AI STİLİST",
       listening: "Dinliyor...",
       end: "KAPAT",
       connecting: "BAĞLANILIYOR..."
     },
-    techPrivacy: {
-      title: "TEKNOLOJİ",
-      subtitle: "GİZLİLİK VE GÜVENLİK",
-      back: "GERİ",
-      engineTitle: "NÖRAL MOTOR",
-      engineDesc: "Kling AI altyapısı.",
-      privacyTitle: "VERİ GÜVENLİĞİ",
-      privacyDesc: "AES-256 şifreleme.",
-      resolutionTitle: "ÇÖZÜNÜRLÜK",
-      resolutionDesc: "4K Render.",
-      dataSovereignty: "VERİ EGEMENLİĞİ",
-      dataSovereigntyDesc: "Veri kontrolü sizde.",
-      verified: "DOĞRULANMIŞ"
-    },
+    // Fix: Added missing translation sections to resolve compilation errors
     insights: {
-      backToStudio: "STÜDYO",
-      title: "ANALİZ",
-      subtitle: "VERİ ANALİTİĞİ",
+      title: "MARKA ANALİTİĞİ",
+      subtitle: "NÖRAL ETKİLEŞİM VERİLERİ",
+      backToStudio: "STÜDYOYA DÖN",
       totalTryOns: "TOPLAM DENEME",
-      engagement: "ETKİLEŞİM",
+      engagement: "ETKİLEŞİM ORANI",
       riskHigh: "YÜKSEK RİSK",
-      riskTitle: "ÜRETİM RİSKİ",
-      biometrics: "BİYOMETRİ",
-      pairings: "KOMBİNLER"
-    },
-    banner: {
-      sub: "CANLI",
-      title: "DENEYİM",
-      desc: "Geleceğin modasını şimdi keşfedin."
+      riskTitle: "ÜRETİM RİSK MATRİSİ",
+      biometrics: "BİYOMETRİK HARİTA",
+      pairings: "NÖRAL EŞLEŞMELER"
     },
     phygital: {
-      title: "PHYGITAL",
-      manifesto: "Fiziksel ve dijitalin sentezi.",
-      scanBtn: "TARAMAYI BAŞLAT",
-      scanning: "TARIYOR..."
+      scanning: "TARANIYOR...",
+      scanBtn: "TARAMAYI BAŞLAT"
     },
-    runway: {
-      shareToRunway: "PAYLAŞ"
+    techPrivacy: {
+      title: "TEKNOLOJİ & GİZLİLİK",
+      subtitle: "NÖRAL GÜVENLİK PROTOKOLLERİ",
+      back: "GERİ DÖN",
+      engineTitle: "NÖRAL MOTOR",
+      engineDesc: "Kling V1.5 altyapısı ile ultra gerçekçi kumaş simülasyonu.",
+      privacyTitle: "VERİ GİZLİLİĞİ",
+      privacyDesc: "Tüm biyometrik verileriniz AES-256 ile şifrelenir.",
+      resolutionTitle: "ÇÖZÜNÜRLÜK",
+      resolutionDesc: "4K nöral sentez ile her detayı yakalayın.",
+      dataSovereignty: "VERİ EGEMENLİĞİ",
+      dataSovereigntyDesc: "Verileriniz sizin kontrolünüzdedir. İstediğiniz zaman silebilirsiniz.",
+      verified: "DOĞRULANMIŞ GÜVENLİK"
     },
-    closet: {
-      saveToCloset: "GARDIROBA KAYDET"
+    bodyProfile: {
+      title: "BİYOMETRİK PROFİL",
+      subtitle: "DAHA İYİ UYUM İÇİN ÖLÇÜLERİNİ GİR",
+      height: "BOY (CM)",
+      weight: "KİLO (KG)",
+      chest: "GÖĞÜS (CM)",
+      waist: "BEL (CM)",
+      hips: "KALÇA (CM)",
+      save: "PROFİLİ KAYDET",
+      skip: "ATLA",
+      skipWarning: "Ölçü girmeden yapılan denemeler standart beden üzerinden hesaplanır.",
+      privacy: "Verileriniz gizli tutulur ve sadece simülasyon için kullanılır.",
+      validationError: "Lütfen geçerli ölçüler giriniz."
+    },
+    personalization: {
+      successTitle: "PROFİL HAZIR!",
+      successDesc: "Biyometrik verilerin başarıyla entegre edildi.",
+      continueBtn: "DEVAM ET",
+      editMeasurements: "ÖLÇÜLERİ DÜZENLE",
+      styleTitle: "TARZINI SEÇ",
+      styleDesc: "Sana özel öneriler için stilini belirle.",
+      styles: {
+        casual: "GÜNLÜK",
+        sport: "SPOR",
+        classic: "KLASİK",
+        street: "SOKAK",
+        minimal: "MİNİMAL"
+      },
+      fitTitle: "KESİM TERCİHİ",
+      fitDesc: "Kıyafetlerin üzerinde nasıl durmasını istersin?",
+      fits: {
+        slim: "DAR KESİM",
+        regular: "STANDART",
+        relaxed: "RAHAT KESİM"
+      },
+      comfortLabel: "KONFOR MODU",
+      comfortDesc: "Hassas ciltler için doku optimizasyonu.",
+      consentTitle: "VERİ ONAYI",
+      consentDesc: "Hizmet kalitesini artırmak için verilerinin işlenmesine izin veriyor musun?",
+      consentCheck: "Verilerimin işlenmesini onaylıyorum.",
+      policyLink: "GİZLİLİK POLİTİKASINI OKU",
+      finishBtn: "KURULUMU TAMAMLA",
+      skip: "DAHA SONRA YAP"
+    },
+    brandPanel: {
+      title: "MARKA YÖNETİM PANELİ",
+      subtitle: "DİJİTAL ENVANTER VE ANALİTİK"
     }
   },
   en: {
@@ -274,53 +211,6 @@ export const translations = {
         brands: "Only partner brands can access your biometrics.",
         private: "Your profile is locked and visible only to you."
       }
-    },
-    arena: {
-      title: "NEURAL ARENA",
-      subtitle: "STYLE ARCHITECTS & RUNWAY CHALLENGES",
-      activeChallenges: "ACTIVE CHALLENGES",
-      runway: "RUNWAY",
-      architects: "STYLE ARCHITECTS",
-      vote: "VOTE",
-      participate: "PARTICIPATE",
-      prize: "PRIZE",
-      deadline: "DEADLINE",
-      votes: "Votes",
-      clones: "Clones",
-      briefing: "TACTICAL BRIEFING",
-      requirements: "REQUIREMENTS & RULES",
-      linkedProduct: "MANDATORY PRODUCT",
-      startChallenge: "START SYNTHESIS",
-      noEntries: "No entries yet."
-    },
-    brandPanel: {
-      title: "BRAND PARTNER HUB",
-      subtitle: "MANAGE PRODUCTS AND COMPETITIONS",
-      uploadProduct: "UPLOAD NEW PRODUCT",
-      manageChallenges: "MANAGE CHALLENGES",
-      productName: "Product Name",
-      price: "Price (₺)",
-      description: "Description",
-      category: "Category",
-      buyLink: "Purchase Link",
-      stats: "Statistics",
-      engagement: "Engagement",
-      activeProducts: "Active Products",
-      save: "PUBLISH",
-      delete: "DELETE",
-      inspect: "INSPECT ENTRIES",
-      totalLikes: "TOTAL LIKES",
-      totalViews: "TOTAL VIEWS",
-      avgTrend: "AVG TREND",
-      back: "BACK",
-      challengeTitle: "Challenge Title",
-      challengeTag: "Hashtag",
-      challengePrize: "Prize",
-      challengeDeadline: "Deadline",
-      challengeBanner: "Banner Image URL",
-      challengeDesc: "Description/Theme",
-      challengeRules: "Rules (One per line)",
-      linkedProductSelect: "Select Required Product"
     },
     header: {
       studio: "STUDIO",
@@ -366,74 +256,18 @@ export const translations = {
       source: "SOURCE",
       render: "TRYONX RENDER"
     },
-    personalization: {
-      successTitle: "Welcome",
-      successDesc: "Biometrics synthesized successfully.",
-      continueBtn: "CONTINUE",
-      editMeasurements: "EDIT",
-      styleTitle: "STYLE",
-      styleDesc: "Analyzing preferences.",
-      styles: {
-        casual: "CASUAL",
-        sport: "SPORT",
-        classic: "CLASSIC",
-        street: "STREET",
-        minimal: "MINIMAL"
-      },
-      fitTitle: "FIT",
-      fitDesc: "Choose your fit.",
-      fits: {
-        slim: "SLIM FIT",
-        regular: "REGULAR FIT",
-        relaxed: "OVERSIZE"
-      },
-      comfortLabel: "COMFORT",
-      comfortDesc: "Prioritize comfort.",
-      consentTitle: "PRIVACY",
-      consentDesc: "Data is encrypted.",
-      consentCheck: "I agree.",
-      policyLink: "Policy",
-      finishBtn: "FINISH",
-      skip: "SKIP"
-    },
-    bodyProfile: {
-      title: "BODY PROFILE",
-      subtitle: "MEASUREMENTS",
-      height: "HEIGHT (CM)",
-      weight: "WEIGHT (KG)",
-      chest: "CHEST (CM)",
-      waist: "WAIST (CM)",
-      hips: "HIPS (CM)",
-      save: "SAVE",
-      skip: "SKIP",
-      skipWarning: "Precision may drop.",
-      privacy: "Encrypted data.",
-      unitLabel: "UNIT",
-      validationError: "Invalid."
-    },
     auth: {
       loginTitle: "LOGIN",
       registerTitle: "SIGNUP",
-      forgotTitle: "RECOVER",
       emailLabel: "EMAIL",
       passLabel: "PASSWORD",
       nameLabel: "FULL NAME",
       loginBtn: "LOG IN",
       registerBtn: "SIGN UP",
-      forgotBtn: "RESET",
       noAccount: "No account?",
       hasAccount: "Have account?",
-      forgotLink: "Forgot key",
-      backToLogin: "Back",
       processing: "WORKING...",
       success: "DONE"
-    },
-    advice: {
-      report: "REPORT",
-      insight: "INSIGHT",
-      shop: "SHOP",
-      source: "SOURCE",
-      vibe: "VIBE"
     },
     live: {
       talk: "AI STYLIST",
@@ -441,47 +275,83 @@ export const translations = {
       end: "END",
       connecting: "CONNECTING..."
     },
-    techPrivacy: {
-      title: "TECH",
-      subtitle: "PRIVACY & SECURITY",
-      back: "BACK",
-      engineTitle: "NEURAL ENGINE",
-      engineDesc: "Kling AI core.",
-      privacyTitle: "SECURITY",
-      privacyDesc: "AES-256.",
-      resolutionTitle: "RESOLUTION",
-      resolutionDesc: "4K Synthesis.",
-      dataSovereignty: "SOVEREIGNTY",
-      dataSovereigntyDesc: "You own your data.",
-      verified: "VERIFIED"
-    },
+    // Fix: Added missing translation sections to resolve compilation errors
     insights: {
-      backToStudio: "STUDIO",
-      title: "INSIGHTS",
-      subtitle: "ANALYTICS",
+      title: "BRAND ANALYTICS",
+      subtitle: "NEURAL ENGAGEMENT DATA",
+      backToStudio: "BACK TO STUDIO",
       totalTryOns: "TOTAL TRY-ONS",
-      engagement: "ENGAGEMENT",
+      engagement: "ENGAGEMENT RATE",
       riskHigh: "HIGH RISK",
-      riskTitle: "PRODUCTION RISK",
-      biometrics: "BIOMETRICS",
-      pairings: "PAIRINGS"
-    },
-    banner: {
-      sub: "LIVE",
-      title: "EXPERIENCE",
-      desc: "Experience future fashion."
+      riskTitle: "PRODUCTION RISK MATRIX",
+      biometrics: "BIOMETRIC MAP",
+      pairings: "NEURAL PAIRINGS"
     },
     phygital: {
-      title: "PHYGITAL",
-      manifesto: "Synthesis of physical & digital.",
-      scanBtn: "START SCAN",
-      scanning: "SCANNING..."
+      scanning: "SCANNING...",
+      scanBtn: "START SCAN"
     },
-    runway: {
-      shareToRunway: "SHARE"
+    techPrivacy: {
+      title: "TECH & PRIVACY",
+      subtitle: "NEURAL SECURITY PROTOCOLS",
+      back: "BACK",
+      engineTitle: "NEURAL ENGINE",
+      engineDesc: "Ultra-realistic fabric simulation powered by Kling V1.5.",
+      privacyTitle: "DATA PRIVACY",
+      privacyDesc: "All biometric data is encrypted with AES-256.",
+      resolutionTitle: "RESOLUTION",
+      resolutionDesc: "Capture every detail with 4K neural synthesis.",
+      dataSovereignty: "DATA SOVEREIGNTY",
+      dataSovereigntyDesc: "Your data is under your control. Delete it anytime.",
+      verified: "VERIFIED SECURITY"
     },
-    closet: {
-      saveToCloset: "SAVE"
+    bodyProfile: {
+      title: "BIOMETRIC PROFILE",
+      subtitle: "ENTER MEASUREMENTS FOR BETTER FIT",
+      height: "HEIGHT (CM)",
+      weight: "WEIGHT (KG)",
+      chest: "CHEST (CM)",
+      waist: "WAIST (CM)",
+      hips: "HIPS (CM)",
+      save: "SAVE PROFILE",
+      skip: "SKIP",
+      skipWarning: "Try-ons without measurements are calculated using standard sizes.",
+      privacy: "Your data is kept private and used only for simulation.",
+      validationError: "Please enter valid measurements."
+    },
+    personalization: {
+      successTitle: "PROFILE READY!",
+      successDesc: "Biometric data successfully integrated.",
+      continueBtn: "CONTINUE",
+      editMeasurements: "EDIT MEASUREMENTS",
+      styleTitle: "CHOOSE YOUR STYLE",
+      styleDesc: "Define your style for personalized recommendations.",
+      styles: {
+        casual: "CASUAL",
+        sport: "SPORT",
+        classic: "CLASSIC",
+        street: "STREET",
+        minimal: "MINIMAL"
+      },
+      fitTitle: "FIT PREFERENCE",
+      fitDesc: "How do you want garments to fit?",
+      fits: {
+        slim: "SLIM FIT",
+        regular: "REGULAR",
+        relaxed: "RELAXED"
+      },
+      comfortLabel: "COMFORT MODE",
+      comfortDesc: "Texture optimization for sensitive skin.",
+      consentTitle: "DATA CONSENT",
+      consentDesc: "Do you consent to data processing to improve service quality?",
+      consentCheck: "I consent to the processing of my data.",
+      policyLink: "READ PRIVACY POLICY",
+      finishBtn: "COMPLETE SETUP",
+      skip: "DO IT LATER"
+    },
+    brandPanel: {
+      title: "BRAND MANAGEMENT PANEL",
+      subtitle: "DIGITAL INVENTORY & ANALYTICS"
     }
   }
 };

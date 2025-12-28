@@ -1,18 +1,24 @@
 
 import React from 'react';
-import { User } from '../types';
+import { User, StyleArchitect } from '../types';
 
 interface UserSearchViewProps {
   query: string;
   users: User[];
+  architects: StyleArchitect[];
   onViewProfile: (user: User) => void;
 }
 
-const UserSearchView: React.FC<UserSearchViewProps> = ({ query, users, onViewProfile }) => {
+const UserSearchView: React.FC<UserSearchViewProps> = ({ query, users, architects, onViewProfile }) => {
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(query.toLowerCase()) || 
     u.email.toLowerCase().includes(query.toLowerCase())
   );
+
+  const getRank = (userId: string) => {
+    const arc = architects.find(a => a.id === userId);
+    return arc ? arc.rank : 99;
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-20 animate-in fade-in duration-500 min-h-[70vh]">
@@ -38,8 +44,8 @@ const UserSearchView: React.FC<UserSearchViewProps> = ({ query, users, onViewPro
             <div className="flex-1 overflow-hidden z-10">
               <h3 className="text-xl font-black uppercase tracking-tight truncate mb-2">{user.name}</h3>
               <div className="flex gap-4">
-                 <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{user.followers.length} TAKİPÇİ</p>
-                 <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">RANK #12</span>
+                 <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{user.followers?.length || 0} TAKİPÇİ</p>
+                 <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">RANK #{getRank(user.id)}</span>
               </div>
             </div>
             <div className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all z-10 shrink-0">

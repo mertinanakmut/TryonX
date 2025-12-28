@@ -29,7 +29,6 @@ const StudioView: React.FC<StudioViewProps> = ({
     { id: 'party', label: t.scenarios.party }
   ];
 
-  // Animated loading steps
   useEffect(() => {
     let interval: any;
     if (state.isLoading) {
@@ -45,18 +44,18 @@ const StudioView: React.FC<StudioViewProps> = ({
   const NeuralXIcon = ({ className, glow = true }: { className?: string, glow?: boolean }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none">
       {glow && (
-        <g filter="url(#glow_studio_v2)">
+        <g filter="url(#glow_studio_final)">
           <path d="M19 5L5 19" stroke="#00d2ff" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
           <path d="M5 5L19 19" stroke="#9d50bb" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.5" />
         </g>
       )}
-      <path d="M19 5L5 19" stroke="url(#x_grad_studio_v2)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M19 5L5 19" stroke="url(#x_grad_studio_final)" strokeWidth="2.5" strokeLinecap="round" />
       <path d="M5 5L19 19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.8" />
       <defs>
-        <linearGradient id="x_grad_studio_v2" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
+        <linearGradient id="x_grad_studio_final" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
           <stop stopColor="#00d2ff" /><stop offset="1" stopColor="#9d50bb" />
         </linearGradient>
-        <filter id="glow_studio_v2" x="0" y="0" width="24" height="24" filterUnits="userSpaceOnUse">
+        <filter id="glow_studio_final" x="0" y="0" width="24" height="24" filterUnits="userSpaceOnUse">
           <feGaussianBlur stdDeviation="1.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
@@ -71,7 +70,7 @@ const StudioView: React.FC<StudioViewProps> = ({
             onClick={() => onStateUpdate({ view: 'home', error: null, isLoading: false, status: 'idle' })} 
             className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all active:scale-90"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" strokeWidth={3} strokeLinecap="round" /></svg>
           </button>
           <div>
             <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-none">{t.header.studio}</h2>
@@ -81,7 +80,6 @@ const StudioView: React.FC<StudioViewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-        {/* Left Side: Controls */}
         <div className="lg:col-span-4 order-2 lg:order-1">
           <section className="bg-[#050505] rounded-[3rem] p-8 border border-white/5 backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] space-y-8">
             <div className="flex items-center justify-between">
@@ -93,12 +91,12 @@ const StudioView: React.FC<StudioViewProps> = ({
             </div>
             
             <div className="space-y-6">
-              <ImageUploader label={t.controls.target} description={t.controls.targetDesc} image={state.personImage} onImageSelect={(b) => onStateUpdate({ personImage: b, error: null })} icon={<NeuralXIcon className="w-6 h-6" glow={false} />} />
-              <ImageUploader label={t.controls.garment} description={t.controls.garmentDesc} image={state.garmentImage} onImageSelect={(b) => onStateUpdate({ garmentImage: b, error: null })} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" strokeWidth={2}/></svg>} />
+              <ImageUploader label={t.controls.target} description={t.controls.targetDesc} image={state.personImage} onImageSelect={(b) => onStateUpdate({ personImage: b, error: null, resultImage: null })} icon={<NeuralXIcon className="w-6 h-6" glow={false} />} />
+              <ImageUploader label={t.controls.garment} description={t.controls.garmentDesc} image={state.garmentImage} onImageSelect={(b) => onStateUpdate({ garmentImage: b, error: null, resultImage: null })} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" strokeWidth={2}/></svg>} />
               
               <div className="grid grid-cols-3 gap-3">
                 {(['tops', 'bottoms', 'one-piece'] as const).map(cat => (
-                  <button key={cat} onClick={() => onStateUpdate({ category: cat })} className={`py-4 rounded-2xl text-[9px] font-black uppercase transition-all border ${state.category === cat ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'bg-transparent text-gray-500 border-white/5 hover:border-white/20'}`}>{t.categories[cat]}</button>
+                  <button key={cat} onClick={() => onStateUpdate({ category: cat, resultImage: null })} className={`py-4 rounded-2xl text-[9px] font-black uppercase transition-all border ${state.category === cat ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'bg-transparent text-gray-500 border-white/5 hover:border-white/20'}`}>{t.categories[cat]}</button>
                 ))}
               </div>
 
@@ -118,7 +116,6 @@ const StudioView: React.FC<StudioViewProps> = ({
           </section>
         </div>
 
-        {/* Right Side: Result */}
         <div className="lg:col-span-8 order-1 lg:order-2">
           <div className="bg-[#050505] rounded-[4rem] p-6 md:p-12 shadow-[0_0_100px_rgba(0,0,0,1)] border border-white/5 flex flex-col min-h-[500px] md:min-h-[750px] relative overflow-hidden group">
             <div className="absolute inset-0 studio-grid opacity-10 pointer-events-none"></div>
@@ -158,7 +155,7 @@ const StudioView: React.FC<StudioViewProps> = ({
                 </div>
               ) : (
                 state.resultImage ? (
-                  <div className="w-full h-full animate-in fade-in zoom-in duration-1000">
+                  <div key={state.resultImage} className="w-full h-full animate-in fade-in zoom-in duration-1000">
                     <CompareSlider before={state.personImage!} after={state.resultImage} labels={{ before: t.results.source, after: t.results.render }} />
                   </div>
                 ) : (

@@ -10,11 +10,9 @@ interface AuthViewProps {
   onCancel: () => void;
 }
 
-type AuthMode = 'login' | 'register';
-
 const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
   const t = translations[lang].auth;
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -24,178 +22,66 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isProcessing) return;
-    
     setIsProcessing(true);
     setError(null);
 
-    const cleanEmail = email.trim().toLowerCase();
-
     try {
       if (mode === 'register') {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: cleanEmail,
+        const { data, error: authError } = await supabase.auth.signUp({
+          email: email.trim(),
           password,
-          options: {
-            data: { full_name: name.trim() }
-          }
+          options: { data: { full_name: name.trim() } }
         });
-
         if (authError) throw authError;
-        if (!authData.user) throw new Error(lang === 'tr' ? "Kayıt işlemi başlatılamadı." : "Registration failed.");
-
-        const newUserProfile = {
-          id: authData.user.id,
-          email: cleanEmail,
-          name: name.trim() || cleanEmail.split('@')[0],
-          role: 'user' as const,
-          visibility: 'public' as const,
-          followers: [],
-          following: []
-        };
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert([newUserProfile]);
-
-        if (profileError) {
-          console.warn("Profile creation background error:", profileError);
+        if (data.user) {
+          // Trigger zaten profili oluşturacak, biz sadece başarılı diyoruz.
+          alert(lang === 'tr' ? "Kayıt başarılı! Giriş yapabilirsiniz." : "Registration successful! You can now log in.");
+          setMode('login');
         }
-        
-        onSuccess(newUserProfile as User);
       } else {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
           password,
         });
-
-        if (authError) {
-          // Spesifik Hata Yönetimi
-          if (authError.message.toLowerCase().includes("invalid login credentials")) {
-             throw new Error(lang === 'tr' ? "E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin." : "Invalid email or password. Please try again.");
-          }
-          throw authError;
-        }
-        
-        if (!authData.user) throw new Error(lang === 'tr' ? "Oturum açılamadı." : "Sign in failed.");
-
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .maybeSingle();
-
-        if (profileError || !profile) {
-          const recoveryProfile = {
-            id: authData.user.id,
-            email: authData.user.email!,
-            name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
-            role: 'user' as const,
-            visibility: 'public' as const,
-            followers: [],
-            following: []
-          };
-          await supabase.from('profiles').upsert([recoveryProfile]);
-          onSuccess(recoveryProfile as User);
-        } else {
+        if (authError) throw authError;
+        if (data.user) {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
           onSuccess(profile as User);
         }
       }
     } catch (err: any) {
-      console.error("Authentication Core Error:", err);
-      setError(err.message || (lang === 'tr' ? "Beklenmedik bir hata oluştu." : "An unexpected error occurred."));
+      setError(err.message);
+    } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-6 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="relative w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 shadow-[0_0_100px_rgba(0,0,0,1)]">
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-24 rounded-3xl tryonx-gradient p-1 flex items-center justify-center shadow-2xl">
-           <div className="h-full w-full bg-black rounded-[1.4rem] flex items-center justify-center">
-              <svg className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none">
-                <path d="M19 5L5 19" stroke="cyan" strokeWidth="3" strokeLinecap="round" />
-                <path d="M5 5L19 19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-           </div>
-        </div>
-
-        <h2 className="text-3xl font-black text-center uppercase tracking-tighter mb-8 mt-6">
+    <div className="fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-6 backdrop-blur-xl">
+      <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10">
+        <h2 className="text-3xl font-black text-center uppercase mb-8">
           {mode === 'login' ? t.loginTitle : t.registerTitle}
         </h2>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[11px] font-black uppercase text-center animate-in slide-in-from-top-4">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs text-center">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (
-            <div className="space-y-1">
-              <label htmlFor="auth-name" className="sr-only">{t.nameLabel}</label>
-              <input 
-                id="auth-name"
-                name="name"
-                type="text" 
-                placeholder={t.nameLabel} 
-                required 
-                autoComplete="name"
-                value={name} onChange={e => setName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
-                disabled={isProcessing}
-              />
-            </div>
+            <input type="text" placeholder={t.nameLabel} required value={name} onChange={e => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-cyan-500" />
           )}
-          
-          <div className="space-y-1">
-            <label htmlFor="auth-email" className="sr-only">{t.emailLabel}</label>
-            <input 
-              id="auth-email"
-              name="email"
-              type="email" 
-              placeholder={t.emailLabel} 
-              required 
-              autoComplete="email"
-              value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
-              disabled={isProcessing}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="auth-password" className="sr-only">{t.passLabel}</label>
-            <input 
-              id="auth-password"
-              name="password"
-              type="password" 
-              placeholder={t.passLabel} 
-              required 
-              autoComplete={mode === 'login' ? "current-password" : "new-password"}
-              value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
-              disabled={isProcessing}
-            />
-          </div>
-          
-          <button 
-            type="submit" disabled={isProcessing}
-            className="w-full py-5 tryonx-gradient rounded-2xl font-black uppercase tracking-widest text-white disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
-          >
-            {isProcessing ? (lang === 'tr' ? "İŞLENİYOR..." : "PROCESSING...") : (mode === 'login' ? t.loginBtn : t.registerBtn)}
+          <input type="email" placeholder={t.emailLabel} required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-cyan-500" />
+          <input type="password" placeholder={t.passLabel} required value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-cyan-500" />
+          <button type="submit" disabled={isProcessing} className="w-full py-5 tryonx-gradient rounded-2xl font-black uppercase text-white shadow-xl">
+            {isProcessing ? t.processing : (mode === 'login' ? t.loginBtn : t.registerBtn)}
           </button>
         </form>
 
-        <div className="mt-8 pt-8 border-t border-white/5 space-y-4 text-center">
-          <button 
-            type="button"
-            disabled={isProcessing}
-            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); }}
-            className="w-full text-[10px] text-gray-500 uppercase font-black hover:text-white transition-colors"
-          >
+        <div className="mt-6 text-center">
+          <button onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-xs text-gray-500 uppercase font-black hover:text-white transition">
             {mode === 'login' ? t.noAccount : t.hasAccount}
           </button>
-          <button type="button" onClick={onCancel} className="w-full text-[9px] text-gray-700 uppercase font-bold tracking-widest hover:text-gray-400">GERİ DÖN</button>
         </div>
+        <button onClick={onCancel} className="w-full mt-4 text-[10px] text-gray-700 uppercase font-bold">İPTAL</button>
       </div>
     </div>
   );

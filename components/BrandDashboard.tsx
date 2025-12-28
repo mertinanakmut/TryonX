@@ -30,18 +30,18 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
   const [newProd, setNewProd] = useState<Partial<BrandProduct>>({ name: '', price: 0, description: '', category: 'tops', imageUrl: '', buyLink: '' });
   const [newCh, setNewCh] = useState<Partial<StyleChallenge>>({ title: '', tag: '#', description: '', prize: '', deadline: '', bannerImage: '', linkedProductId: '' });
 
-  const brands = Array.from(new Set(products.map(p => p.brandId))).map(id => {
-    const brandProd = products.find(p => p.brandId === id);
+  const brands = Array.from(new Set((products || []).map(p => p.brandId))).map(id => {
+    const brandProd = (products || []).find(p => p.brandId === id);
     return {
       id,
       name: brandProd?.brandName || id,
       logo: brandProd?.brandLogo || '',
-      productCount: products.filter(p => p.brandId === id).length
+      productCount: (products || []).filter(p => p.brandId === id).length
     };
   });
 
   const activeBrand = brands.find(b => b.id === editingBrandId);
-  const brandProducts = products.filter(p => p.brandId === editingBrandId);
+  const brandProducts = (products || []).filter(p => p.brandId === editingBrandId);
 
   return (
     <div className="min-h-screen bg-[#020202] text-white p-6 sm:p-12 animate-in fade-in duration-700 relative z-50">
@@ -146,7 +146,7 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
                                  <h4 className="text-xs font-black uppercase tracking-tight truncate">{prod.name}</h4>
                                  <button onClick={() => onDeleteProduct(prod.id)} className="text-red-500"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2} /></svg></button>
                               </div>
-                              <p className="text-[10px] font-bold text-gray-500 uppercase">₺{prod.price.toLocaleString()}</p>
+                              <p className="text-[10px] font-bold text-gray-500 uppercase">₺{prod.price?.toLocaleString()}</p>
                            </div>
                         </div>
                       ))}
@@ -160,7 +160,7 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
           <div className="bg-white/[0.01] border border-white/5 rounded-[3rem] overflow-x-auto relative z-10">
              <table className="w-full text-left min-w-[600px]">
                 <tbody className="divide-y divide-white/5">
-                   {products.map(prod => (
+                   {(products || []).map(prod => (
                       <tr key={prod.id} className="group hover:bg-white/[0.02] transition-colors">
                          <td className="px-10 py-6">
                             <div className="flex items-center gap-6">
@@ -171,7 +171,7 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
                                </div>
                             </div>
                          </td>
-                         <td className="px-10 py-6 text-[11px] font-black">₺{prod.price.toLocaleString()}</td>
+                         <td className="px-10 py-6 text-[11px] font-black">₺{prod.price?.toLocaleString()}</td>
                          <td className="px-10 py-6 text-right">
                             <button 
                               onClick={() => onDeleteProduct(prod.id)} 
@@ -199,7 +199,7 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
                 </button>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {challenges.map(ch => (
+                {(challenges || []).map(ch => (
                   <div key={ch.id} className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] overflow-hidden group">
                      <img src={ch.bannerImage} className="h-48 w-full object-cover opacity-60 group-hover:opacity-100 transition" />
                      <div className="p-8 space-y-4">
@@ -262,7 +262,7 @@ const BrandDashboard: React.FC<BrandDashboardProps> = ({
                   className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold focus:border-purple-500 outline-none text-white"
                 >
                   <option value="" className="bg-black">Gerekli Ürün Seçin</option>
-                  {products.map(p => <option key={p.id} value={p.id} className="bg-black">{p.brandName} - {p.name}</option>)}
+                  {(products || []).map(p => <option key={p.id} value={p.id} className="bg-black">{p.brandName} - {p.name}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-4">

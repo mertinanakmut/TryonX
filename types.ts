@@ -4,6 +4,27 @@ export type Scenario = 'studio' | 'urban' | 'nature' | 'party';
 export type FitPreference = 'slim' | 'regular' | 'relaxed';
 export type ProfileVisibility = 'public' | 'brands' | 'private';
 
+/* Added GeminiStyleAdvice to fix missing exported member error */
+export interface GeminiStyleAdvice {
+  summary: string;
+  stylingTips: string[];
+  vibe: string;
+}
+
+/* Added BrandInsight to fix missing exported member error in InsightsDashboard */
+export interface BrandInsight {
+  totalTryOns: number;
+  engagementRate: number;
+  clonesCount: number;
+  bodyTypeData: { type: string; percentage: number }[];
+  topPairings: { item: string; frequency: number }[];
+  productionRisk: {
+    score: number;
+    issue: string;
+    description: string;
+  };
+}
+
 export interface UserPreferences {
   style_preferences: string[];
   fit_preference: FitPreference;
@@ -23,19 +44,21 @@ export interface BodyMeasurements {
 }
 
 export interface User {
-  id: string; // Database UUID
+  id: string;
   email: string;
   name: string;
   role: 'user' | 'admin' | 'brand';
   bio?: string;
-  avatar_url?: string; // Matched with SQL schema
+  avatar_url?: string;
   visibility: ProfileVisibility;
   followers: string[];
   following: string[];
+  saved_posts?: string[]; // IDs of RunwayPosts or Lookbook entries saved
 }
 
 export interface Comment {
   id: string;
+  userId: string;
   userName: string;
   userAvatar?: string;
   text: string;
@@ -60,37 +83,14 @@ export interface BrandProduct {
   trendScore: number;
 }
 
-export interface BrandInsight {
-  totalTryOns: number;
-  engagementRate: number;
-  clonesCount: number;
-  bodyTypeData: { type: string; percentage: number }[];
-  topPairings: { item: string; frequency: number }[];
-  productionRisk: {
-    score: number;
-    issue: string;
-    description: string;
-  };
-}
-
-export interface GeminiStyleAdvice {
-  summary: string;
-  stylingTips: string[];
-  vibe: string;
-}
-
 export interface LookbookEntry {
   id: string;
   personImage: string;
   garmentImage: string;
   resultImage: string;
   date: number;
+  /* Updated advice to use the newly defined GeminiStyleAdvice interface */
   advice?: GeminiStyleAdvice;
-}
-
-export interface ClosetItem extends LookbookEntry {
-  isFavorite: boolean;
-  tags: string[];
 }
 
 export interface StyleChallenge {
@@ -115,8 +115,11 @@ export interface RunwayPost {
   garmentImage: string;
   category: string;
   vibe: string;
-  votes: number;
+  likes: number;
+  liked_by: string[]; // List of user IDs
+  saved_by: string[]; // List of user IDs
   comments: Comment[];
+  created_at?: string;
 }
 
 export interface StyleArchitect {
@@ -131,7 +134,7 @@ export interface StyleArchitect {
 export interface TryOnState {
   view: 'landing' | 'home' | 'studio' | 'brand' | 'tech' | 'auth' | 'marketplace' | 'arena' | 'search' | 'user_profile';
   currentUser: User | null;
-  targetUser: User | null; // Profile viewing
+  targetUser: User | null;
   personImage: string | null;
   garmentImage: string | null;
   resultImage: string | null;
@@ -141,7 +144,7 @@ export interface TryOnState {
   status: 'idle' | 'uploading' | 'processing' | 'completed' | 'error';
   error: string | null;
   lookbook: LookbookEntry[];
-  closet: ClosetItem[];
+  closet: any[];
   brandProducts: BrandProduct[];
   challenges: StyleChallenge[];
   runwayPosts: RunwayPost[];
