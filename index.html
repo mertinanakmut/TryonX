@@ -2,13 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>TryonX | NEURAL TRY-ON STUDIO</title>
     <script>
-      /**
-       * Process Shim:
-       * Tarayıcıda 'process' nesnesi bulunmadığı için kütüphanelerin çökmesini engeller.
-       */
       (function() {
         const processShim = {
           env: { NODE_ENV: 'production' },
@@ -29,6 +25,7 @@
         color: #ffffff;
         overflow-x: hidden;
         margin: 0;
+        -webkit-tap-highlight-color: transparent;
       }
       .tryonx-gradient {
         background: linear-gradient(135deg, #00d2ff 0%, #9d50bb 100%);
@@ -47,24 +44,62 @@
         inset: 0;
         background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
                           linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 50px 50px;
+        background-size: 30px 30px;
         pointer-events: none;
+      }
+      @media (min-width: 768px) {
+        .studio-grid { background-size: 50px 50px; }
       }
       @keyframes marquee {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
       }
       .animate-marquee {
-        animation: marquee 35s linear infinite;
+        animation: marquee 25s linear infinite;
       }
+      
+      .rotate-x-slow {
+        animation: rotateNeuralX 30s linear infinite;
+        transform-style: preserve-3d;
+      }
+      
+      @keyframes rotateNeuralX {
+        from { transform: perspective(1000px) rotateZ(0deg) rotateX(10deg); }
+        to { transform: perspective(1000px) rotateZ(360deg) rotateX(10deg); }
+      }
+
+      .hologram-pulse {
+        animation: holoPulse 6s ease-in-out infinite;
+      }
+
+      @keyframes holoPulse {
+        0%, 100% { 
+          opacity: 0.1; 
+          transform: translate(-50%, -50%) scale(1); 
+        }
+        50% { 
+          opacity: 0.2; 
+          transform: translate(-50%, -50%) scale(1.1); 
+        }
+      }
+
+      .float-tech {
+        animation: floatTech 6s ease-in-out infinite;
+      }
+      @keyframes floatTech {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+
       #root:empty::before {
-        content: 'INITIALIZING NEURAL CORE...';
+        content: 'NEURAL_LINKING...';
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         font-family: monospace;
         font-weight: 900;
+        font-size: 10px;
         letter-spacing: 0.5em;
         color: rgba(0, 210, 255, 0.5);
         animation: pulse 2s infinite;
@@ -73,6 +108,10 @@
         0%, 100% { opacity: 0.3; }
         50% { opacity: 1; }
       }
+
+      /* Mobile scrollbar hide */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
     <script type="importmap">
 {
@@ -90,7 +129,6 @@
   <body class="particle-bg">
     <div class="studio-grid"></div>
     <div id="root"></div>
-    <!-- Uygulama giriş noktası -->
     <script type="module" src="index.tsx"></script>
   </body>
 </html>
