@@ -41,7 +41,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         });
 
         if (authError) throw authError;
-        if (!authData.user) throw new Error("Kayıt işlemi başlatılamadı.");
+        if (!authData.user) throw new Error(lang === 'tr' ? "Kayıt işlemi başlatılamadı." : "Registration failed.");
 
         const newUserProfile = {
           id: authData.user.id,
@@ -58,7 +58,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
           .upsert([newUserProfile]);
 
         if (profileError) {
-          console.error("Profile creation error:", profileError);
+          console.warn("Profile creation background error:", profileError);
         }
         
         onSuccess(newUserProfile as User);
@@ -69,14 +69,14 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         });
 
         if (authError) {
-          // Özel hata yönetimi
-          if (authError.message.includes("Invalid login credentials")) {
-             throw new Error(lang === 'tr' ? "E-posta veya şifre hatalı." : "Invalid email or password.");
+          // Spesifik Hata Yönetimi
+          if (authError.message.toLowerCase().includes("invalid login credentials")) {
+             throw new Error(lang === 'tr' ? "E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin." : "Invalid email or password. Please try again.");
           }
           throw authError;
         }
         
-        if (!authData.user) throw new Error("Giriş yapılamadı.");
+        if (!authData.user) throw new Error(lang === 'tr' ? "Oturum açılamadı." : "Sign in failed.");
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -101,8 +101,8 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         }
       }
     } catch (err: any) {
-      console.error("Auth process failed:", err);
-      setError(err.message || (lang === 'tr' ? "Bir hata oluştu." : "An error occurred."));
+      console.error("Authentication Core Error:", err);
+      setError(err.message || (lang === 'tr' ? "Beklenmedik bir hata oluştu." : "An unexpected error occurred."));
       setIsProcessing(false);
     }
   };
@@ -131,34 +131,51 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (
+            <div className="space-y-1">
+              <label htmlFor="auth-name" className="sr-only">{t.nameLabel}</label>
+              <input 
+                id="auth-name"
+                name="name"
+                type="text" 
+                placeholder={t.nameLabel} 
+                required 
+                autoComplete="name"
+                value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
+                disabled={isProcessing}
+              />
+            </div>
+          )}
+          
+          <div className="space-y-1">
+            <label htmlFor="auth-email" className="sr-only">{t.emailLabel}</label>
             <input 
-              type="text" 
-              placeholder={t.nameLabel} 
+              id="auth-email"
+              name="email"
+              type="email" 
+              placeholder={t.emailLabel} 
               required 
-              autoComplete="name"
-              value={name} onChange={e => setName(e.target.value)}
+              autoComplete="email"
+              value={email} onChange={e => setEmail(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
               disabled={isProcessing}
             />
-          )}
-          <input 
-            type="email" 
-            placeholder={t.emailLabel} 
-            required 
-            autoComplete="email"
-            value={email} onChange={e => setEmail(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
-            disabled={isProcessing}
-          />
-          <input 
-            type="password" 
-            placeholder={t.passLabel} 
-            required 
-            autoComplete={mode === 'login' ? "current-password" : "new-password"}
-            value={password} onChange={e => setPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
-            disabled={isProcessing}
-          />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="auth-password" className="sr-only">{t.passLabel}</label>
+            <input 
+              id="auth-password"
+              name="password"
+              type="password" 
+              placeholder={t.passLabel} 
+              required 
+              autoComplete={mode === 'login' ? "current-password" : "new-password"}
+              value={password} onChange={e => setPassword(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
+              disabled={isProcessing}
+            />
+          </div>
           
           <button 
             type="submit" disabled={isProcessing}

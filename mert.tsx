@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import StudioView from './components/StudioView';
 import AuthView from './components/AuthView';
@@ -44,7 +44,9 @@ const App: React.FC = () => {
     preferences: null
   });
 
-  const updateState = (updates: Partial<TryOnState>) => setState(p => ({ ...p, ...updates }));
+  const updateState = useCallback((updates: Partial<TryOnState>) => {
+    setState(p => ({ ...p, ...updates }));
+  }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -56,63 +58,42 @@ const App: React.FC = () => {
       
       if (!error && profile) return profile as User;
     } catch (e) {
-      console.error("Profile Fetch Error:", e);
+      console.warn("Profile Fetch Ignored:", e);
     }
     return null;
   };
 
-  const checkAndSetAuth = async () => {
-    // 8 Saniyelik Güvenlik Zaman Aşımı (Zayıf bağlantılar için artırıldı)
-    const safetyTimeout = setTimeout(() => {
-      if (isCheckingAuth) {
-        console.warn("Auth check timed out, proceeding to landing.");
+  // Auth kontrolü sadece başlangıçta çalışacak şekilde düzenlendi
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          updateState({ 
+            currentUser: profile || { 
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+              role: 'user',
+              followers: [],
+              following: [],
+              visibility: 'public'
+            } as User, 
+            view: 'home' 
+          });
+        }
+      } catch (e) {
+        console.error("Auth init error:", e);
+      } finally {
         setIsCheckingAuth(false);
         setIsAuthReady(true);
       }
-    }, 8000);
+    };
 
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Supabase Session Error:", sessionError);
-        throw sessionError;
-      }
+    initAuth();
 
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        if (profile) {
-          updateState({ currentUser: profile, view: 'home' });
-        } else {
-          updateState({ 
-            view: 'home',
-            currentUser: { 
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.full_name || 'User',
-              avatar_url: session.user.user_metadata?.avatar_url || '',
-              role: 'user',
-              following: [],
-              followers: [],
-            } as User
-          });
-        }
-      } else {
-        updateState({ view: 'landing' });
-      }
-    } catch (e) {
-      console.error("Auth initialization failed:", e);
-      updateState({ view: 'landing' });
-    } finally {
-      clearTimeout(safetyTimeout);
-      setIsCheckingAuth(false);
-      setIsAuthReady(true);
-    }
-  };
-
-  useEffect(() => {
-    checkAndSetAuth();
-
+    // Global verileri çek
     const fetchGlobalData = async () => {
       try {
         const [prodRes, chalRes, profRes] = await Promise.allSettled([
@@ -127,28 +108,23 @@ const App: React.FC = () => {
           allUsers: profRes.status === 'fulfilled' ? (profRes.value.data as User[] || []) : [] 
         });
       } catch (e) {
-        console.error("Background data fetch error:", e);
+        console.error("Global Data Load Failed:", e);
       }
     };
-
     fetchGlobalData();
 
+    // Auth değişim dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          updateState({ 
-            currentUser: profile || null,
-            view: state.view === 'landing' || state.view === 'auth' ? 'home' : state.view
-          });
-        }
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        updateState({ currentUser: profile, view: 'home' });
       } else if (event === 'SIGNED_OUT') {
         updateState({ currentUser: null, view: 'landing' });
       }
     });
 
     return () => subscription?.unsubscribe();
-  }, []);
+  }, [updateState]);
 
   const handleUpdateProfile = async (updates: Partial<User>) => {
     if (!state.currentUser) return;
@@ -163,7 +139,7 @@ const App: React.FC = () => {
       const freshProfile = await fetchUserProfile(state.currentUser.id);
       if (freshProfile) updateState({ currentUser: freshProfile });
     } catch (err) {
-      console.error("Profile update error:", err);
+      console.error("Profile update failed:", err);
     }
   };
 
@@ -198,27 +174,27 @@ const App: React.FC = () => {
       await supabase.from('profiles').update({ following: updatedFollowing }).eq('id', state.currentUser.id);
       const { data: profiles } = await supabase.from('profiles').select('*');
       updateState({ allUsers: (profiles as User[]) || [] });
-    } catch (err) { console.error("Follow error:", err); }
+    } catch (err) { console.error("Follow mechanism error:", err); }
   };
 
   const NeuralXIcon = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19 5L5 19" stroke="url(#x_grad_home_v2)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M19 5L5 19" stroke="url(#x_grad_home_v3_fixed_2)" strokeWidth="2.5" strokeLinecap="round" />
       <path d="M5 5L19 19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.8" />
       <defs>
-        <linearGradient id="x_grad_home_v2" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
+        <linearGradient id="x_grad_home_v3_fixed_2" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
           <stop stopColor="#00d2ff" /><stop offset="1" stopColor="#9d50bb" />
         </linearGradient>
       </defs>
     </svg>
   );
 
-  if (isCheckingAuth && !isAuthReady) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <div className="h-12 w-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-cyan-500 font-black text-[10px] tracking-[0.5em] uppercase animate-pulse">CONNECTING_CORE</p>
+          <p className="text-cyan-500 font-black text-[10px] tracking-[0.5em] uppercase animate-pulse">ESTABLISHING_NEURAL_LINK</p>
         </div>
       </div>
     );
@@ -241,7 +217,6 @@ const App: React.FC = () => {
         onViewAuth={() => updateState({ view: 'auth' })}
         onLogout={async () => { 
           await supabase.auth.signOut();
-          updateState({ currentUser: null, view: 'landing' }); 
         }}
         onOpenProfile={() => setShowProfile(true)}
         onSearch={(q) => updateState({ searchQuery: q, view: q ? 'search' : 'home' })}
@@ -289,7 +264,7 @@ const App: React.FC = () => {
                       {state.challenges.length > 0 && (
                         <>
                           <img src={state.challenges[0]?.bannerImage} className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent p-6 md:p-12 flex flex-col justify-end">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-6 md:p-12 flex flex-col justify-end">
                             <span className="bg-cyan-500 text-black px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest w-fit mb-3">{state.challenges[0]?.tag}</span>
                             <h4 className="text-2xl md:text-5xl font-black uppercase tracking-tight">{state.challenges[0]?.title}</h4>
                           </div>
@@ -302,7 +277,7 @@ const App: React.FC = () => {
                           {state.allUsers.slice(0, 3).map((u, i) => (
                             <div key={u.id} onClick={() => updateState({ targetUser: u, view: 'user_profile' })} className="flex items-center gap-4 md:gap-6 group cursor-pointer">
                               <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-cyan-500 transition-colors">
-                                 <img src={u.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                                 <img src={u.avatar_url || 'https://placehold.co/150/000000/FFFFFF?text=X'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                               </div>
                               <p className="text-sm md:text-lg font-black uppercase group-hover:text-cyan-400 transition-colors truncate">{u.name}</p>
                             </div>
@@ -328,7 +303,6 @@ const App: React.FC = () => {
       {showProfile && state.currentUser && (
         <ProfileSidebar lang={lang} user={state.currentUser} onClose={() => setShowProfile(false)} onLogout={async () => { 
           await supabase.auth.signOut();
-          updateState({ currentUser: null, view: 'landing' }); 
           setShowProfile(false); 
         }} onUpdateUser={handleUpdateProfile} />
       )}
