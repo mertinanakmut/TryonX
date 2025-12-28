@@ -4,14 +4,33 @@ export type Scenario = 'studio' | 'urban' | 'nature' | 'party';
 export type FitPreference = 'slim' | 'regular' | 'relaxed';
 export type ProfileVisibility = 'public' | 'brands' | 'private';
 
-/* Added GeminiStyleAdvice to fix missing exported member error */
 export interface GeminiStyleAdvice {
   summary: string;
   stylingTips: string[];
   vibe: string;
 }
 
-/* Added BrandInsight to fix missing exported member error in InsightsDashboard */
+/* Added BodyMeasurements interface for biometric data tracking */
+export interface BodyMeasurements {
+  height: number;
+  weight: number;
+  chest: number;
+  waist: number;
+  hips: number;
+  unit: 'metric' | 'imperial';
+}
+
+/* Added UserPreferences interface for style and fit customization */
+export interface UserPreferences {
+  style_preferences: string[];
+  fit_preference: FitPreference;
+  comfort_mode_enabled: boolean;
+  data_consent: boolean;
+  legal_version: string;
+  onboarding_complete: boolean;
+}
+
+/* Added BrandInsight interface for business analytics data */
 export interface BrandInsight {
   totalTryOns: number;
   engagementRate: number;
@@ -25,24 +44,6 @@ export interface BrandInsight {
   };
 }
 
-export interface UserPreferences {
-  style_preferences: string[];
-  fit_preference: FitPreference;
-  comfort_mode_enabled: boolean;
-  data_consent: boolean;
-  legal_version: string;
-  onboarding_complete: boolean;
-}
-
-export interface BodyMeasurements {
-  height: number;
-  weight: number;
-  chest: number;
-  waist: number;
-  hips: number;
-  unit: 'metric' | 'imperial';
-}
-
 export interface User {
   id: string;
   email: string;
@@ -53,7 +54,8 @@ export interface User {
   visibility: ProfileVisibility;
   followers: string[];
   following: string[];
-  saved_posts?: string[]; // IDs of RunwayPosts or Lookbook entries saved
+  saved_posts?: string[];
+  lookbook?: LookbookEntry[];
 }
 
 export interface Comment {
@@ -85,11 +87,11 @@ export interface BrandProduct {
 
 export interface LookbookEntry {
   id: string;
-  personImage: string;
-  garmentImage: string;
+  personImage?: string;
+  garmentImage?: string;
   resultImage: string;
   date: number;
-  /* Updated advice to use the newly defined GeminiStyleAdvice interface */
+  isManual?: boolean;
   advice?: GeminiStyleAdvice;
 }
 
@@ -112,13 +114,16 @@ export interface RunwayPost {
   userName: string;
   userAvatar: string;
   resultImage: string;
-  garmentImage: string;
+  garmentImage?: string;
   category: string;
   vibe: string;
   likes: number;
-  liked_by: string[]; // List of user IDs
-  saved_by: string[]; // List of user IDs
+  liked_by: string[];
+  saved_by: string[];
   comments: Comment[];
+  is_manual?: boolean;
+  // Added trend_score to fix TypeScript error in mert.tsx and match the database schema.
+  trend_score?: number;
   created_at?: string;
 }
 

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Language, translations } from '../translations';
-import { BrandProduct, StyleChallenge, RunwayPost } from '../types';
+import { Language, translations } from '../translations.ts';
+import { BrandProduct, StyleChallenge, RunwayPost } from '../types.ts';
 
 interface BrandDashboardProps {
   lang: Language;

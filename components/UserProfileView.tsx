@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { User, LookbookEntry, RunwayPost } from '../types';
 
 interface UserProfileViewProps {
@@ -14,12 +14,14 @@ interface UserProfileViewProps {
   onEdit?: () => void;
   onLogout?: () => void;
   onBack: () => void;
+  onManualUpload?: (base64: string) => void;
 }
 
 const UserProfileView: React.FC<UserProfileViewProps> = ({ 
-  user, rank, isMe, currentUserRole, isFollowing, lookbook = [], savedPosts = [], onFollow, onEdit, onLogout, onBack 
+  user, rank, isMe, currentUserRole, isFollowing, lookbook = [], savedPosts = [], onFollow, onEdit, onLogout, onBack, onManualUpload 
 }) => {
   const [activeTab, setActiveTab] = useState<'lookbook' | 'saved'>('lookbook');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const canViewContent = 
     isMe || 
@@ -27,6 +29,17 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({
     user.visibility === 'public';
 
   const canViewSaved = isMe || currentUserRole === 'admin';
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onManualUpload) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onManualUpload(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:py-20 animate-in fade-in slide-in-from-bottom-10 duration-700 min-h-screen">
@@ -62,7 +75,7 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({
                <button onClick={onEdit} className="px-12 py-5 rounded-full bg-white text-black text-[11px] font-black uppercase tracking-widest hover:bg-cyan-500 transition">AYARLAR</button>
              ) : (
                <button onClick={onFollow} className={`px-16 py-6 rounded-full text-[11px] font-black uppercase tracking-widest transition ${isFollowing ? 'bg-white/5 border border-white/10' : 'bg-white text-black'}`}>
-                 {isFollowing ? 'TAKİBİ BIRAK' : 'TAKİP ET'}
+                 {isFollowing ? 'TAKİP ET' : 'TAKİP ET'}
                </button>
              )}
           </div>
@@ -81,23 +94,45 @@ const UserProfileView: React.FC<UserProfileViewProps> = ({
           <div className="py-24 text-center border border-dashed border-white/10 rounded-[3rem] text-gray-600 font-black">BU ARŞİV GİZLİDİR</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {activeTab === 'lookbook' ? (
-              lookbook.map(entry => (
-                <div key={entry.id} className="aspect-[3/4] rounded-[2.5rem] overflow-hidden border border-white/5 bg-[#080808]">
-                  <img src={entry.resultImage} className="w-full h-full object-cover" />
-                </div>
-              ))
-            ) : (
-              savedPosts.map(post => (
-                <div key={post.id} className="aspect-[3/4] rounded-[2.5rem] overflow-hidden border border-white/5 bg-[#080808] relative group">
-                  <img src={post.resultImage} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-6">
-                     <p className="text-[10px] font-black uppercase text-cyan-400">{post.userName}</p>
-                     <p className="text-[8px] font-bold text-gray-500 uppercase">{post.vibe}</p>
+            {activeTab === 'lookbook' && (
+              <>
+                {isMe && (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-[3/4] rounded-[2.5rem] border-2 border-dashed border-white/10 flex flex-col items-center justify-center group cursor-pointer hover:border-cyan-500/50 hover:bg-white/[0.02] transition-all"
+                  >
+                    <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-cyan-500 group-hover:scale-110 transition-all mb-4">
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 4v16m8-8H4" strokeWidth={3} strokeLinecap="round"/></svg>
+                    </div>
+                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest group-hover:text-white transition">YENİ STİL YÜKLE</span>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                   </div>
-                </div>
-              ))
+                )}
+                {lookbook.map(entry => (
+                  <div key={entry.id} className="aspect-[3/4] rounded-[2.5rem] overflow-hidden border border-white/5 bg-[#080808] relative group">
+                    <img src={entry.resultImage} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end">
+                      <p className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">
+                        {entry.isManual ? 'MANUEL YÜKLEME' : 'NÖRAL SENTEZ'}
+                      </p>
+                      <p className="text-[8px] font-bold text-gray-500 uppercase tracking-tight">
+                        {new Date(entry.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
+            
+            {activeTab === 'saved' && savedPosts.map(post => (
+              <div key={post.id} className="aspect-[3/4] rounded-[2.5rem] overflow-hidden border border-white/5 bg-[#080808] relative group">
+                <img src={post.resultImage} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-6">
+                   <p className="text-[10px] font-black uppercase text-cyan-400">{post.userName}</p>
+                   <p className="text-[8px] font-bold text-gray-500 uppercase">{post.vibe}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
