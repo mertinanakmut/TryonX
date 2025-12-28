@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Language, translations } from '../translations';
 import { User } from '../types';
@@ -67,10 +68,16 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
           password,
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          // Özel hata yönetimi
+          if (authError.message.includes("Invalid login credentials")) {
+             throw new Error(lang === 'tr' ? "E-posta veya şifre hatalı." : "Invalid email or password.");
+          }
+          throw authError;
+        }
+        
         if (!authData.user) throw new Error("Giriş yapılamadı.");
 
-        // Fetch the profile to ensure we have the correct role (admin/brand/user)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -78,7 +85,6 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
           .maybeSingle();
 
         if (profileError || !profile) {
-          // If profile missing for some reason, create a fallback one
           const recoveryProfile = {
             id: authData.user.id,
             email: authData.user.email!,
@@ -96,18 +102,7 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
       }
     } catch (err: any) {
       console.error("Auth process failed:", err);
-      let errorMsg = err.message || "İşlem sırasında bir hata oluştu.";
-      
-      // Better error messages for common Supabase Auth errors
-      if (err.message === "Invalid login credentials") {
-        errorMsg = lang === 'tr' ? "E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin veya kayıt olun." : "Invalid email or password. Please check your credentials or sign up.";
-      } else if (err.message === "User already registered") {
-        errorMsg = lang === 'tr' ? "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin." : "This email is already registered. Try logging in.";
-      } else if (err.message === "Password should be at least 6 characters") {
-        errorMsg = lang === 'tr' ? "Şifre en az 6 karakter olmalıdır." : "Password should be at least 6 characters.";
-      }
-      
-      setError(errorMsg);
+      setError(err.message || (lang === 'tr' ? "Bir hata oluştu." : "An error occurred."));
       setIsProcessing(false);
     }
   };
@@ -137,20 +132,29 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (
             <input 
-              type="text" placeholder={t.nameLabel} required 
+              type="text" 
+              placeholder={t.nameLabel} 
+              required 
+              autoComplete="name"
               value={name} onChange={e => setName(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
               disabled={isProcessing}
             />
           )}
           <input 
-            type="email" placeholder={t.emailLabel} required 
+            type="email" 
+            placeholder={t.emailLabel} 
+            required 
+            autoComplete="email"
             value={email} onChange={e => setEmail(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
             disabled={isProcessing}
           />
           <input 
-            type="password" placeholder={t.passLabel} required 
+            type="password" 
+            placeholder={t.passLabel} 
+            required 
+            autoComplete={mode === 'login' ? "current-password" : "new-password"}
             value={password} onChange={e => setPassword(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-cyan-500 transition-all" 
             disabled={isProcessing}

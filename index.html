@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>TryonX | NEURAL TRY-ON STUDIO</title>
+    <meta name="description" content="Yapay zeka tabanlı sanal deneme kabini. Biyometrik eşleşme ile tarzınızı keşfedin.">
     <script>
       (function() {
         const processShim = {
@@ -17,7 +18,8 @@
         globalThis.process = processShim;
       })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Üretim ortamı için optimize edilmiş Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body {
@@ -110,7 +112,6 @@
         50% { opacity: 1; }
       }
 
-      /* Mobile scrollbar hide */
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -130,7 +131,6 @@
   <body class="particle-bg">
     <div class="studio-grid"></div>
     <div id="root"></div>
-    <!-- Uygulama giriş noktası - Göreceli yol kullanımı CORS hatalarını önler -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

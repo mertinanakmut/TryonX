@@ -62,19 +62,22 @@ const App: React.FC = () => {
   };
 
   const checkAndSetAuth = async () => {
-    // 5 Saniyelik Güvenlik Zaman Aşımı
+    // 8 Saniyelik Güvenlik Zaman Aşımı (Zayıf bağlantılar için artırıldı)
     const safetyTimeout = setTimeout(() => {
       if (isCheckingAuth) {
         console.warn("Auth check timed out, proceeding to landing.");
         setIsCheckingAuth(false);
         setIsAuthReady(true);
       }
-    }, 5000);
+    }, 8000);
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error("Supabase Session Error:", sessionError);
+        throw sessionError;
+      }
 
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id);
@@ -110,19 +113,18 @@ const App: React.FC = () => {
   useEffect(() => {
     checkAndSetAuth();
 
-    // Verileri arka planda çek
     const fetchGlobalData = async () => {
       try {
-        const [prodRes, chalRes, profRes] = await Promise.all([
+        const [prodRes, chalRes, profRes] = await Promise.allSettled([
           supabase.from('products').select('*'),
           supabase.from('challenges').select('*'),
           supabase.from('profiles').select('*')
         ]);
         
         updateState({ 
-          brandProducts: prodRes.data as BrandProduct[] || [], 
-          challenges: chalRes.data as StyleChallenge[] || [], 
-          allUsers: profRes.data as User[] || [] 
+          brandProducts: prodRes.status === 'fulfilled' ? (prodRes.value.data as BrandProduct[] || []) : [], 
+          challenges: chalRes.status === 'fulfilled' ? (chalRes.value.data as StyleChallenge[] || []) : [], 
+          allUsers: profRes.status === 'fulfilled' ? (profRes.value.data as User[] || []) : [] 
         });
       } catch (e) {
         console.error("Background data fetch error:", e);
