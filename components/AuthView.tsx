@@ -30,23 +30,21 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
 
     try {
       if (mode === 'register') {
-        // 1. Auth Signup
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
         });
 
         if (authError) throw authError;
-        if (!authData.user) throw new Error("Kullanıcı oluşturulamadı.");
+        if (!authData.user) throw new Error("Kayıt işlemi başlatılamadı.");
 
-        // 2. Database Profile Creation
         const newUserProfile = {
           id: authData.user.id,
-          email: email.toLowerCase(),
-          name: name || email.split('@')[0],
-          role: 'user',
-          visibility: 'public',
-          followers: [], // Empty array for Postgres text[]
+          email: email.trim().toLowerCase(),
+          name: name.trim() || email.split('@')[0],
+          role: 'user' as const,
+          visibility: 'public' as const,
+          followers: [],
           following: []
         };
 
@@ -55,55 +53,47 @@ const AuthView: React.FC<AuthViewProps> = ({ lang, onSuccess, onCancel }) => {
           .insert([newUserProfile]);
 
         if (profileError) {
-          console.error("Profil oluşturma hatası:", profileError);
-          // Profil oluşturma başarısız olsa bile kullanıcı auth olmuş olabilir
-          onSuccess(newUserProfile as unknown as User);
-        } else {
-          onSuccess(newUserProfile as unknown as User);
+          console.error("Profile creation error:", profileError);
         }
+        
+        onSuccess(newUserProfile as User);
       } else {
-        // 1. Auth Login
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: email.toLowerCase(),
+          email: email.trim().toLowerCase(),
           password,
         });
 
         if (authError) throw authError;
-        if (!authData.user) throw new Error("Giriş başarısız.");
+        if (!authData.user) throw new Error("Giriş yapılamadı.");
 
-        // 2. Fetch Existing Profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', authData.user.id)
           .single();
 
-        if (profileError) {
-          // Profil yoksa (manuel silinmiş olabilir), yeni bir tane oluşturmayı dene
-          console.warn("Profil bulunamadı, yeniden oluşturuluyor...");
+        if (profileError || !profile) {
           const recoveryProfile = {
             id: authData.user.id,
-            email: email.toLowerCase(),
-            name: email.split('@')[0],
-            role: 'user',
-            visibility: 'public',
+            email: authData.user.email!,
+            name: authData.user.email!.split('@')[0],
+            role: 'user' as const,
+            visibility: 'public' as const,
             followers: [],
             following: []
           };
-          await supabase.from('profiles').insert([recoveryProfile]);
-          onSuccess(recoveryProfile as unknown as User);
+          await supabase.from('profiles').upsert([recoveryProfile]);
+          onSuccess(recoveryProfile as User);
         } else {
           onSuccess(profile as User);
         }
       }
     } catch (err: any) {
-      console.error("Auth Error:", err);
-      setError(err.message || "Bilinmeyen bir hata oluştu.");
-      setIsProcessing(false); // Sadece hata durumunda burada kapatıyoruz, başarıda zaten view değişecek
-    } finally {
-      // Başarılı durumda view 'home'a geçtiği için unmount olabilir, bu yüzden kontrollü reset
-      // setIsProcessing(false); // Artık catch bloğunda veya onSuccess sonrası yönetiliyor
+      console.error("Auth process failed:", err);
+      setError(err.message || "İşlem sırasında bir hata oluştu.");
+      setIsProcessing(false);
     }
+    // Note: We don't setIsProcessing(false) on success because the view will unmount
   };
 
   return (
