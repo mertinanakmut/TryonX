@@ -1,13 +1,16 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// Tarayıcı uyumlu env okuma
 const safeEnv = (key: string, fallback: string) => {
-  // Directly check for process and process.env to avoid Property 'process' does not exist on type 'Window' error
-  // Using global process variable which is expected in this execution context
-  if (typeof process !== 'undefined' && process.env) {
-    return (process.env as any)[key] || fallback;
+  try {
+    // window.process veya global process kontrolü
+    const env = (typeof window !== 'undefined' && (window as any).process?.env) || 
+                (typeof process !== 'undefined' && process.env);
+    
+    return (env && env[key]) || fallback;
+  } catch (e) {
+    return fallback;
   }
-  return fallback;
 };
 
 const supabaseUrl = safeEnv('SUPABASE_URL', 'https://uenwivymqaprfdyjiwsr.supabase.co');

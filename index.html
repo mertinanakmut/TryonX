@@ -6,21 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TryonX | NEURAL TRY-ON STUDIO</title>
     <script>
-      /** 
-       * Siyah Ekran Çözümü: 
-       * Tarayıcıda 'process' nesnesini simüle ederek kütüphanelerin çökmesini engeller.
-       */
-      window.process = {
-        env: {
-          NODE_ENV: 'production',
-          // Gemini API key buraya platform tarafından otomatik enjekte edilir.
-          // Fallback olarak boş bırakıyoruz ki GoogleGenAI constructor'ı çökmesin.
-          API_KEY: '' 
-        },
-        nextTick: function(fn) { setTimeout(fn, 0); },
-        cwd: function() { return '/'; },
-        browser: true
-      };
+      // Siyah ekranı önlemek için process polyfill
+      // Eğer sistem tarafından enjekte edilmişse bozmuyoruz, yoksa tanımlıyoruz.
+      if (typeof window.process === 'undefined') {
+        window.process = {
+          env: { NODE_ENV: 'production' },
+          nextTick: function(fn) { setTimeout(fn, 0); },
+          browser: true
+        };
+      }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,6 +24,7 @@
         background-color: #000000;
         color: #ffffff;
         overflow-x: hidden;
+        margin: 0;
       }
       .tryonx-gradient {
         background: linear-gradient(135deg, #00d2ff 0%, #9d50bb 100%);
@@ -42,19 +37,6 @@
       .particle-bg {
         background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
         background-size: 32px 32px;
-      }
-      .scanner-line {
-        position: absolute;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #00d2ff, transparent);
-        box-shadow: 0 0 15px #00d2ff;
-        animation: scan 3s linear infinite;
-      }
-      @keyframes scan {
-        0% { top: 0%; opacity: 0; }
-        50% { opacity: 1; }
-        100% { top: 100%; opacity: 0; }
       }
       .studio-grid {
         position: absolute;
@@ -71,43 +53,32 @@
       .animate-marquee {
         animation: marquee 35s linear infinite;
       }
-      .animate-marquee:hover {
-        animation-play-state: paused;
+      #root:empty::before {
+        content: 'INITIALIZING NEURAL CORE...';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: monospace;
+        font-weight: 900;
+        letter-spacing: 0.5em;
+        color: rgba(0, 210, 255, 0.5);
+        animation: pulse 2s infinite;
       }
-      .rotate-x-slow {
-        animation: rotateX 25s linear infinite;
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
       }
-      @keyframes rotateX {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      .hologram-pulse {
-        animation: holoPulse 4s ease-in-out infinite;
-      }
-      @keyframes holoPulse {
-        0%, 100% { opacity: 0.15; transform: scale(1) translate(-50%, -50%); }
-        50% { opacity: 0.25; transform: scale(1.1) translate(-45%, -45%); }
-      }
-      .float-tech {
-        animation: floatTech 6s ease-in-out infinite;
-      }
-      @keyframes floatTech {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-      }
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-track { background: #000; }
-      ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3/",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>

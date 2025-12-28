@@ -44,58 +44,74 @@ const App: React.FC = () => {
 
   const updateState = (updates: Partial<TryOnState>) => setState(p => ({ ...p, ...updates }));
 
-  // Initialize Data from Supabase
   useEffect(() => {
-    const fetchData = async () => {
+    const initApp = async () => {
       try {
-        const { data: products } = await supabase.from('products').select('*');
-        const { data: challenges } = await supabase.from('challenges').select('*');
-        const { data: profiles } = await supabase.from('profiles').select('*');
-
+        // Oturum durumunu kontrol et
         const { data: { session } } = await supabase.auth.getSession();
-        let currentUser = null;
+        let currentUserData = null;
+        
+        if (session?.user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (!profileError && profile) {
+            currentUserData = profile;
+          }
+        }
+
+        // Ürün ve yarışma verilerini çek (hata olsa bile uygulama çalışmaya devam etsin)
+        const [productsRes, challengesRes, profilesRes] = await Promise.allSettled([
+          supabase.from('products').select('*'),
+          supabase.from('challenges').select('*'),
+          supabase.from('profiles').select('*')
+        ]);
+
+        const brandProducts = productsRes.status === 'fulfilled' ? (productsRes.value.data as BrandProduct[] || []) : [];
+        const challenges = challengesRes.status === 'fulfilled' ? (challengesRes.value.data as StyleChallenge[] || []) : [];
+        const allUsers = profilesRes.status === 'fulfilled' ? (profilesRes.value.data as User[] || []) : [];
+
+        updateState({
+          brandProducts,
+          challenges,
+          allUsers,
+          currentUser: currentUserData
+        });
+      } catch (e) {
+        console.error("Initialization failed:", e);
+      }
+    };
+
+    initApp();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      try {
         if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
-          currentUser = profile;
-        }
-
-        updateState({
-          brandProducts: (products as BrandProduct[]) || [],
-          challenges: (challenges as StyleChallenge[]) || [],
-          allUsers: (profiles as User[]) || [],
-          currentUser: currentUser
-        });
-      } catch (e) {
-        console.error("Initial fetch error:", e);
-      }
-    };
-
-    fetchData();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        // Giriş yapıldığında veya oturum yenilendiğinde view'ı home yapıyoruz
-        if (event === 'SIGNED_IN') {
-           updateState({ currentUser: profile, view: 'home' });
+          
+          if (event === 'SIGNED_IN') {
+             updateState({ currentUser: profile, view: 'home' });
+          } else {
+             updateState({ currentUser: profile });
+          }
         } else {
-           updateState({ currentUser: profile });
+          updateState({ currentUser: null });
         }
-      } else {
-        updateState({ currentUser: null });
+      } catch (err) {
+        console.error("Auth change error:", err);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
   }, []);
 
   const handleTryOnExecute = async () => {
@@ -120,18 +136,18 @@ const App: React.FC = () => {
 
   const handleUpdateProfile = async (updates: Partial<User>) => {
     if (state.currentUser) {
-      // 400 Bad Request hatasını çözmek için: primary key (id) veya değiştirilemez (email) alanları temizle
-      const { id, email, ...updatableFields } = updates;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updatableFields)
-        .eq('id', state.currentUser.id);
-      
-      if (!error) {
-        updateState({ currentUser: { ...state.currentUser, ...updatableFields } });
-      } else {
-        console.error("Profile update error:", error);
+      try {
+        const { id, email, ...updatableFields } = updates;
+        const { error } = await supabase
+          .from('profiles')
+          .update(updatableFields)
+          .eq('id', state.currentUser.id);
+        
+        if (!error) {
+          updateState({ currentUser: { ...state.currentUser, ...updatableFields } });
+        }
+      } catch (err) {
+        console.error("Update profile error:", err);
       }
     }
   };
@@ -141,23 +157,27 @@ const App: React.FC = () => {
       updateState({ view: 'auth' });
       return;
     }
-    const targetUser = state.allUsers.find(u => u.id === targetId);
-    if (!targetUser) return;
+    try {
+      const targetUser = state.allUsers.find(u => u.id === targetId);
+      if (!targetUser) return;
 
-    const isFollowing = state.currentUser.following.includes(targetId);
-    const updatedFollowing = isFollowing 
-      ? state.currentUser.following.filter(id => id !== targetId)
-      : [...state.currentUser.following, targetId];
-    
-    await supabase.from('profiles').update({ following: updatedFollowing }).eq('id', state.currentUser.id);
-    
-    const updatedFollowers = isFollowing 
-      ? targetUser.followers.filter(id => id !== state.currentUser?.id)
-      : [...targetUser.followers, state.currentUser!.id];
-    await supabase.from('profiles').update({ followers: updatedFollowers }).eq('id', targetId);
+      const isFollowing = state.currentUser.following.includes(targetId);
+      const updatedFollowing = isFollowing 
+        ? state.currentUser.following.filter(id => id !== targetId)
+        : [...state.currentUser.following, targetId];
+      
+      await supabase.from('profiles').update({ following: updatedFollowing }).eq('id', state.currentUser.id);
+      
+      const updatedFollowers = isFollowing 
+        ? targetUser.followers.filter(id => id !== state.currentUser?.id)
+        : [...targetUser.followers, state.currentUser!.id];
+      await supabase.from('profiles').update({ followers: updatedFollowers }).eq('id', targetId);
 
-    const { data: profiles } = await supabase.from('profiles').select('*');
-    updateState({ allUsers: (profiles as User[]) || [] });
+      const { data: profiles } = await supabase.from('profiles').select('*');
+      updateState({ allUsers: (profiles as User[]) || [] });
+    } catch (err) {
+      console.error("Follow error:", err);
+    }
   };
 
   const NeuralXIcon = ({ className }: { className?: string }) => (
@@ -210,8 +230,10 @@ const App: React.FC = () => {
         onViewAdmin={() => updateState({ view: 'brand' })}
         onViewAuth={() => updateState({ view: 'auth' })}
         onLogout={async () => { 
-          await supabase.auth.signOut();
-          updateState({ currentUser: null, view: 'home' }); 
+          try {
+            await supabase.auth.signOut();
+            updateState({ currentUser: null, view: 'home' }); 
+          } catch (e) {}
         }}
         onOpenProfile={() => setShowProfile(true)}
         onSearch={(q) => updateState({ searchQuery: q, view: q ? 'search' : 'home' })}
@@ -314,9 +336,11 @@ const App: React.FC = () => {
 
       {showProfile && state.currentUser && (
         <ProfileSidebar lang={lang} user={state.currentUser} onClose={() => setShowProfile(false)} onLogout={async () => { 
-          await supabase.auth.signOut();
-          updateState({ currentUser: null }); 
-          setShowProfile(false); 
+          try {
+            await supabase.auth.signOut();
+            updateState({ currentUser: null }); 
+            setShowProfile(false); 
+          } catch (e) {}
         }} onUpdateUser={handleUpdateProfile} />
       )}
       <LiveStylist resultImage={state.resultImage} lang={lang} />
