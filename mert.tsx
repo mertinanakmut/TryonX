@@ -24,7 +24,7 @@ const App: React.FC = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   const [state, setState] = useState<TryOnState>({
-    view: 'landing', // İlk render'da landing, ancak useEffect bunu güncelleyecek
+    view: 'landing',
     currentUser: null,
     targetUser: null,
     personImage: null, garmentImage: null, resultImage: null,
@@ -51,7 +51,7 @@ const App: React.FC = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Using maybeSingle to avoid errors if profile doesn't exist
       
       if (!error && profile) return profile as User;
     } catch (e) {
@@ -62,24 +62,34 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
+      // Safety timeout to ensure the app always renders even if Supabase is slow/unresponsive
+      const timeoutId = setTimeout(() => {
+        if (!isAuthReady) {
+          console.warn("Initialization taking too long, forcing ready state.");
+          setIsAuthReady(true);
+        }
+      }, 5000);
+
       try {
-        // 1. Önce mevcut oturumu al
-        const { data: { session } } = await supabase.auth.getSession();
+        // 1. Get current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        if (sessionError) {
+          console.error("Session fetch error:", sessionError);
+        }
+
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
           if (profile) {
             updateState({ currentUser: profile, view: 'home' });
           } else {
-            // Profil henüz oluşturulmamışsa bile oturum var demektir
             updateState({ view: 'home' });
           }
         } else {
-          // Oturum yoksa landing'de kal
           updateState({ view: 'landing' });
         }
         
-        // 2. Global verileri arka planda çek (Bloklamadan)
+        // 2. Fetch global data in background
         Promise.allSettled([
           supabase.from('products').select('*'),
           supabase.from('challenges').select('*'),
@@ -94,20 +104,19 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("Initialization error:", e);
       } finally {
+        clearTimeout(timeoutId);
         setIsAuthReady(true);
       }
     };
 
     initApp();
 
-    // 3. Oturum değişikliklerini dinle (Özellikle yenileme sonrası senkronizasyon için)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
           if (profile) {
             updateState({ currentUser: profile });
-            // Eğer kullanıcı landing sayfasındaysa ve giriş yapmışsa ana sayfaya at
             setState(prev => prev.view === 'landing' || prev.view === 'auth' ? { ...prev, view: 'home' } : prev);
           }
         }
@@ -186,7 +195,6 @@ const App: React.FC = () => {
     </svg>
   );
 
-  // Uygulama tamamen hazır olana kadar yükleme ekranını göster
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -198,7 +206,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Auth hazır olduğunda view'a göre render et
   if (state.view === 'landing') {
     return <LandingView lang={lang} setLang={setLang} onEnter={() => updateState({ view: 'home' })} />;
   }
