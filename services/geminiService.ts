@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiStyleAdvice } from "../types";
 import { Language } from "../translations";
@@ -34,7 +33,9 @@ async function getBase64FromUrl(url: string): Promise<string> {
 }
 
 export const getFashionAdvice = async (personImage: string, garmentImage: string, lang: Language = 'en'): Promise<GeminiStyleAdvice> => {
-  const apiKey = process.env.API_KEY || '';
+  // globalThis üzerinden shim'lenen process'e erişim
+  const apiKey = (globalThis as any).process?.env?.API_KEY || '';
+  
   if (!apiKey) {
     console.warn("Gemini API Key missing. Skipping advice.");
     return {

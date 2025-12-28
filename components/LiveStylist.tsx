@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { Language, translations } from '../translations';
@@ -50,12 +49,13 @@ const LiveStylist: React.FC<LiveStylistProps> = ({ resultImage, lang }) => {
   };
 
   const startSession = async () => {
-    if (!process.env.API_KEY) return;
+    const apiKey = (globalThis as any).process?.env?.API_KEY;
+    if (!apiKey) return;
     setIsConnecting(true);
     
     try {
       // Create a new GoogleGenAI instance right before making an API call.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       
       const session = await ai.live.connect({
@@ -74,7 +74,7 @@ const LiveStylist: React.FC<LiveStylistProps> = ({ resultImage, lang }) => {
           },
           onmessage: async (message: LiveServerMessage) => {
             // Process model output audio bytes
-            const base64EncodedAudioString = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+            const base64EncodedAudioString = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64EncodedAudioString && audioContextRef.current) {
               const ctx = audioContextRef.current;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);

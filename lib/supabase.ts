@@ -1,12 +1,9 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const safeEnv = (key: string, fallback: string) => {
   try {
-    // window.process veya global process kontrolü
-    const env = (typeof window !== 'undefined' && (window as any).process?.env) || 
-                (typeof process !== 'undefined' && process.env);
-    
+    // globalThis.process üzerinden erişim shim sayesinde güvenlidir
+    const env = (globalThis as any).process?.env;
     return (env && env[key]) || fallback;
   } catch (e) {
     return fallback;
