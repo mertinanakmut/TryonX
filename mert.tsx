@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [marketFilter, setMarketFilter] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const [state, setState] = useState<TryOnState>({
     view: 'landing',
@@ -51,7 +52,7 @@ const App: React.FC = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Using maybeSingle to avoid errors if profile doesn't exist
+        .maybeSingle();
       
       if (!error && profile) return profile as User;
     } catch (e) {
@@ -60,74 +61,91 @@ const App: React.FC = () => {
     return null;
   };
 
-  useEffect(() => {
-    const initApp = async () => {
-      // Safety timeout to ensure the app always renders even if Supabase is slow/unresponsive
-      const timeoutId = setTimeout(() => {
-        if (!isAuthReady) {
-          console.warn("Initialization taking too long, forcing ready state.");
-          setIsAuthReady(true);
-        }
-      }, 5000);
+  const checkAndSetAuth = async () => {
+    // 5 Saniyelik Güvenlik Zaman Aşımı
+    const safetyTimeout = setTimeout(() => {
+      if (isCheckingAuth) {
+        console.warn("Auth check timed out, proceeding to landing.");
+        setIsCheckingAuth(false);
+        setIsAuthReady(true);
+      }
+    }, 5000);
 
-      try {
-        // 1. Get current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session fetch error:", sessionError);
-        }
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
 
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          if (profile) {
-            updateState({ currentUser: profile, view: 'home' });
-          } else {
-            updateState({ view: 'home' });
-          }
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        if (profile) {
+          updateState({ currentUser: profile, view: 'home' });
         } else {
-          updateState({ view: 'landing' });
+          updateState({ 
+            view: 'home',
+            currentUser: { 
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || 'User',
+              avatar_url: session.user.user_metadata?.avatar_url || '',
+              role: 'user',
+              following: [],
+              followers: [],
+            } as User
+          });
         }
-        
-        // 2. Fetch global data in background
-        Promise.allSettled([
+      } else {
+        updateState({ view: 'landing' });
+      }
+    } catch (e) {
+      console.error("Auth initialization failed:", e);
+      updateState({ view: 'landing' });
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsCheckingAuth(false);
+      setIsAuthReady(true);
+    }
+  };
+
+  useEffect(() => {
+    checkAndSetAuth();
+
+    // Verileri arka planda çek
+    const fetchGlobalData = async () => {
+      try {
+        const [prodRes, chalRes, profRes] = await Promise.all([
           supabase.from('products').select('*'),
           supabase.from('challenges').select('*'),
           supabase.from('profiles').select('*')
-        ]).then((results) => {
-          const brandProducts = results[0].status === 'fulfilled' ? (results[0].value.data as BrandProduct[] || []) : [];
-          const challenges = results[1].status === 'fulfilled' ? (results[1].value.data as StyleChallenge[] || []) : [];
-          const allUsers = results[2].status === 'fulfilled' ? (results[2].value.data as User[] || []) : [];
-          updateState({ brandProducts, challenges, allUsers });
+        ]);
+        
+        updateState({ 
+          brandProducts: prodRes.data as BrandProduct[] || [], 
+          challenges: chalRes.data as StyleChallenge[] || [], 
+          allUsers: profRes.data as User[] || [] 
         });
-
       } catch (e) {
-        console.error("Initialization error:", e);
-      } finally {
-        clearTimeout(timeoutId);
-        setIsAuthReady(true);
+        console.error("Background data fetch error:", e);
       }
     };
 
-    initApp();
+    fetchGlobalData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
-          if (profile) {
-            updateState({ currentUser: profile });
-            setState(prev => prev.view === 'landing' || prev.view === 'auth' ? { ...prev, view: 'home' } : prev);
-          }
+          updateState({ 
+            currentUser: profile || null,
+            view: state.view === 'landing' || state.view === 'auth' ? 'home' : state.view
+          });
         }
       } else if (event === 'SIGNED_OUT') {
         updateState({ currentUser: null, view: 'landing' });
       }
     });
 
-    return () => {
-      if (subscription) subscription.unsubscribe();
-    };
+    return () => subscription?.unsubscribe();
   }, []);
 
   const handleUpdateProfile = async (updates: Partial<User>) => {
@@ -170,8 +188,6 @@ const App: React.FC = () => {
   const handleFollow = async (targetId: string) => {
     if (!state.currentUser) { updateState({ view: 'auth' }); return; }
     try {
-      const targetUser = state.allUsers.find(u => u.id === targetId);
-      if (!targetUser) return;
       const isFollowing = state.currentUser.following.includes(targetId);
       const updatedFollowing = isFollowing 
         ? state.currentUser.following.filter(id => id !== targetId)
@@ -185,17 +201,17 @@ const App: React.FC = () => {
 
   const NeuralXIcon = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19 5L5 19" stroke="url(#x_grad_home)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M19 5L5 19" stroke="url(#x_grad_home_v2)" strokeWidth="2.5" strokeLinecap="round" />
       <path d="M5 5L19 19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.8" />
       <defs>
-        <linearGradient id="x_grad_home" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
+        <linearGradient id="x_grad_home_v2" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
           <stop stopColor="#00d2ff" /><stop offset="1" stopColor="#9d50bb" />
         </linearGradient>
       </defs>
     </svg>
   );
 
-  if (!isAuthReady) {
+  if (isCheckingAuth && !isAuthReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
@@ -258,6 +274,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
+
             {state.view === 'home' && (
               <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-12 md:space-y-24">
                 <div className="space-y-8 md:space-y-16">

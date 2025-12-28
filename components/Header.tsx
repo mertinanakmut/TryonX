@@ -25,11 +25,8 @@ const Header: React.FC<HeaderProps> = ({
   onSearch, searchQuery
 }) => {
   const t = translations[lang].header;
-  
-  // Robust Role Check: Admin, Brand veya büyük harfle ADMIN/BRAND
   const rawRole = currentUser?.role?.toLowerCase() || 'user';
   const hasPanelAccess = rawRole === 'admin' || rawRole === 'brand';
-  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const NavItems = () => (
@@ -38,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({
       <button onClick={() => { onViewMarketplace(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-gray-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">{t.showcase}</button>
       <button onClick={() => { onViewArena(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-gray-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">{t.network}</button>
       {hasPanelAccess && (
-        <button onClick={() => { onViewAdmin(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-cyan-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">YÖNETİM</button>
+        <button onClick={() => { onViewAdmin(); setIsMobileMenuOpen(false); }} className="text-[10px] md:text-xs font-black text-cyan-400 hover:text-white transition tracking-widest uppercase py-3 md:py-2 border-b border-white/5 md:border-none w-full md:w-auto text-left md:text-center">PANEL</button>
       )}
     </>
   );
@@ -49,10 +46,10 @@ const Header: React.FC<HeaderProps> = ({
         <div onClick={onViewHome} className="flex items-center gap-2 md:gap-3 cursor-pointer group shrink-0 z-[110]">
           <div className="relative h-8 w-8 md:h-11 md:w-11 rounded-lg md:rounded-xl bg-white/[0.03] flex items-center justify-center border border-white/10 overflow-hidden transition-all group-hover:border-white/30">
             <svg className="h-5 w-5 md:h-6 md:w-6 text-white" viewBox="0 0 24 24" fill="none">
-              <path d="M19 5L5 19" stroke="url(#logo_grad_main_v3)" strokeWidth="3" strokeLinecap="round" />
+              <path d="M19 5L5 19" stroke="url(#logo_grad_header_v2)" strokeWidth="3" strokeLinecap="round" />
               <path d="M5 5L19 19" stroke="white" strokeWidth="3" strokeLinecap="round" />
               <defs>
-                <linearGradient id="logo_grad_main_v3" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
+                <linearGradient id="logo_grad_header_v2" x1="19" y1="5" x2="5" y2="19" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#00d2ff" /><stop offset="1" stopColor="#9d50bb" />
                 </linearGradient>
               </defs>

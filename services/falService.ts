@@ -6,15 +6,16 @@ const convertUrlToBase64 = async (url: string): Promise<string> => {
   if (url.startsWith('data:')) return url;
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`Image fetch failed: ${response.statusText}`);
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onerror = () => reject(new Error("Base64 conversion failed"));
       reader.readAsDataURL(blob);
     });
   } catch (e) {
-    console.error("Base64 conversion failed:", url, e);
+    console.error("Critical Image Error:", url, e);
     return url;
   }
 };
@@ -39,11 +40,19 @@ export const performTryOn = async (personImage: string, garmentImage: string, ca
       }),
     });
 
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Synthesis failed: ${response.statusText}`);
+    }
 
     const data = await response.json();
-    return data.image?.url || data.result?.url || "";
+    const resultUrl = data.image?.url || data.result?.url || "";
+    
+    if (!resultUrl) throw new Error("API returned no image URL");
+    
+    return resultUrl;
   } catch (error: any) {
-    throw new Error(error.message || "Synthesis failed.");
+    console.error("Fal.ai Service Error:", error);
+    throw new Error(error.message || "Neural synthesis failed at core level.");
   }
 };
