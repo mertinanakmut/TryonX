@@ -1,9 +1,10 @@
 
 import React, { useRef } from 'react';
+import NeuralLogo from './NeuralLogo';
 
 interface ImageUploaderProps {
   label: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   image: string | null;
   onImageSelect: (base64: string) => void;
   description: string;
@@ -37,8 +38,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ label, icon, image, onIma
         <div className="relative w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 group-hover:border-cyan-500/30 transition-all duration-500">
           <img src={image} alt={label} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105" />
           
-          {/* Subtle Scanner on Hover */}
-          <div className="absolute inset-0 scanner-line opacity-0 group-hover:opacity-40 transition-opacity"></div>
+          {/* Scanner Line */}
+          <div className="scanner-line opacity-40 group-hover:opacity-100 transition-opacity"></div>
           
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 backdrop-blur-[2px]">
             <button 
@@ -56,8 +57,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ label, icon, image, onIma
         >
           <div className="relative">
             <div className="absolute -inset-4 rounded-full tryonx-gradient blur opacity-10 group-hover:opacity-30 transition duration-700"></div>
-            <div className="relative rounded-full bg-black border border-white/10 p-6 text-cyan-400 group-hover:text-white group-hover:border-cyan-500/50 transition-all duration-500">
-              {icon}
+            <div className="relative rounded-full bg-black border border-white/10 p-4 text-cyan-400 group-hover:text-white group-hover:border-cyan-500/50 transition-all duration-500">
+              {icon || <NeuralLogo className="w-6 h-6" />}
             </div>
           </div>
           <div className="text-center">

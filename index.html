@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
   <head>
@@ -23,6 +24,17 @@
             },
             fontFamily: {
               sans: ['Plus Jakarta Sans', 'sans-serif'],
+            },
+            animation: {
+              'spin-slow': 'spin 12s linear infinite',
+              'spin-fast': 'spin 1s linear infinite',
+              'float': 'float 6s ease-in-out infinite',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0px)' },
+                '50%': { transform: 'translateY(-20px)' },
+              }
             }
           }
         }
@@ -60,6 +72,22 @@
       }
       @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       .animate-marquee { animation: marquee 25s linear infinite; }
+      
+      .scanner-line {
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+        position: absolute;
+        width: 100%;
+        top: 0;
+        animation: scan 3s linear infinite;
+      }
+      @keyframes scan {
+        0% { top: 0; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+      }
+
       #root:empty::before {
         content: 'BOOTING_SYSTEM...';
         position: fixed;
