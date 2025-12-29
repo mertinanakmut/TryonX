@@ -43,11 +43,12 @@ const LandingView: React.FC<LandingViewProps> = ({ lang, onEnter, setLang }) => 
       {/* Centerpiece Content */}
       <div className="relative z-10 flex flex-col items-center max-w-4xl text-center">
         <div className="mb-16 relative group cursor-pointer animate-float">
-          <NeuralLogo className="w-40 h-40" isProcessing={isScanning} />
+          {/* Sadece bu logo interaktif */}
+          <NeuralLogo className="w-40 h-40" isProcessing={isScanning} interactive={true} />
           
-          {/* Circular Scanner Ring */}
-          <div className="absolute inset-0 -m-8 border border-white/5 rounded-full animate-[spin_15s_linear_infinite_reverse]">
-             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_10px_#9d50bb]"></div>
+          {/* Saat Yönünde Dönen Tarayıcı Halkası */}
+          <div className="absolute inset-0 -m-8 border border-white/5 rounded-full animate-[spin_15s_linear_infinite]">
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-cyan-500 rounded-full shadow-[0_0_10px_#00d2ff]"></div>
           </div>
         </div>
 
@@ -55,7 +56,7 @@ const LandingView: React.FC<LandingViewProps> = ({ lang, onEnter, setLang }) => 
            <h1 className="text-8xl sm:text-[10rem] font-black tracking-tighter uppercase tryonx-text-gradient select-none">
              Tryon
            </h1>
-           <NeuralLogo className="w-20 h-20 sm:w-32 sm:h-32" />
+           <NeuralLogo className="w-20 h-20 sm:w-32 sm:h-32" interactive={true} />
         </div>
 
         <p className="text-white/40 text-[11px] font-black uppercase tracking-[1.2em] mb-24 animate-pulse select-none">

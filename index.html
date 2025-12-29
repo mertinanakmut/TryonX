@@ -27,13 +27,23 @@
             },
             animation: {
               'spin-slow': 'spin 12s linear infinite',
-              'spin-fast': 'spin 1s linear infinite',
+              'spin-fast': 'spin 0.8s linear infinite',
               'float': 'float 6s ease-in-out infinite',
+              'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+              'shimmer': 'shimmer 3s infinite linear',
             },
             keyframes: {
               float: {
                 '0%, 100%': { transform: 'translateY(0px)' },
                 '50%': { transform: 'translateY(-20px)' },
+              },
+              pulseGlow: {
+                '0%, 100%': { opacity: 0.4, transform: 'scale(1)' },
+                '50%': { opacity: 0.8, transform: 'scale(1.1)' },
+              },
+              shimmer: {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' },
               }
             }
           }
@@ -65,11 +75,49 @@
       .studio-grid {
         position: absolute;
         inset: 0;
-        background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 30px 30px;
+        background-image: 
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+        background-size: 30px 30px, 30px 30px, 120px 120px, 120px 120px;
         pointer-events: none;
       }
+      .neural-glow-mesh {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .glow-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.15;
+        animation: float 20s infinite ease-in-out;
+      }
+      .orb-1 { width: 600px; height: 600px; background: #00d2ff; top: -200px; right: -200px; }
+      .orb-2 { width: 500px; height: 500px; background: #9d50bb; bottom: -150px; left: -150px; animation-delay: -5s; }
+      .orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 10%; animation-delay: -10s; }
+
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          transparent 50%,
+          rgba(0, 0, 0, 0.1) 50%
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 1000;
+        opacity: 0.03;
+      }
+
       @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       .animate-marquee { animation: marquee 25s linear infinite; }
       
@@ -86,6 +134,16 @@
         10% { opacity: 1; }
         90% { opacity: 1; }
         100% { top: 100%; opacity: 0; }
+      }
+
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.01);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .glass-panel:hover {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.1);
       }
 
       #root:empty::before {
@@ -117,6 +175,12 @@
     </script>
   </head>
   <body class="particle-bg">
+    <div class="neural-glow-mesh">
+      <div class="glow-orb orb-1"></div>
+      <div class="glow-orb orb-2"></div>
+      <div class="glow-orb orb-3"></div>
+    </div>
+    <div class="scanlines"></div>
     <div class="studio-grid"></div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
